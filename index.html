@@ -204,6 +204,31 @@
     <div class="group-label">Recent entries</div>
     <div id="journalHist"></div>
   </section>
+
+  <!-- LIBRARY -->
+  <section class="tab" id="tab-library">
+    <div class="group-label">Reconstitution calculator</div>
+    <div class="card" style="padding:16px">
+      <div class="row2">
+        <div class="field" style="margin-bottom:10px"><label>Vial size (mg)</label>
+          <input id="rcVial" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 10"></div>
+        <div class="field" style="margin-bottom:10px"><label>BAC water (ml)</label>
+          <input id="rcBac" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 3"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px"><label>Desired dose (mcg)</label>
+        <input id="rcDose" type="number" inputmode="decimal" step="1" placeholder="e.g. 200"></div>
+      <button class="btn" id="rcCalc">Calculate</button>
+      <div id="rcResult" class="hidden" style="margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px">
+        <div class="fs-11" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Result</div>
+        <div id="rcConc" style="font-size:13px;color:var(--muted);margin-bottom:4px"></div>
+        <div id="rcUnits" style="font-size:24px;font-weight:700;color:var(--accent)"></div>
+        <div id="rcMl" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
+      </div>
+    </div>
+    <div class="group-label">Peptide library</div>
+    <div id="libList"></div>
+    <p class="hint" style="margin:14px 4px 0">Reference only — general information, not medical advice. Dosages vary by individual, source, and goal. Verify with your own protocol and a clinician.</p>
+  </section>
 </main>
 
 <button class="fab hidden" id="fab">+</button>
@@ -225,6 +250,10 @@
     <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
     Journal
   </button>
+  <button data-tab="library">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Library
+  </button>
 </nav>
 
 <!-- ITEM EDITOR -->
@@ -242,6 +271,55 @@ const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
+
+/* ---------- peptide reference library ---------- */
+const LIBRARY = [
+  { name:"CJC-1295 (no DAC)", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A growth-hormone-releasing hormone (GHRH) analog, often paired with a GHRP like Ipamorelin.",
+    does:"Stimulates a pulse of natural growth hormone — aimed at recovery, body composition, and sleep quality.",
+    dose:"100 mcg, 1–3×/day, subcutaneous. Often stacked 1:1 with Ipamorelin.",
+    half:"~30 min", duration:"2–3 hrs" },
+  { name:"Ipamorelin", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A selective growth-hormone secretagogue (GHRP) with minimal effect on cortisol or appetite.",
+    does:"Triggers a clean GH release; commonly used for recovery, lean mass, and sleep.",
+    dose:"200–300 mcg, 1–3×/day SubQ, often with CJC-1295. Empty stomach / before bed.",
+    half:"~2 hrs", duration:"3–4 hrs" },
+  { name:"BPC-157", tag:"Healing / repair", col:"#3DD68C",
+    desc:"A synthetic peptide derived from a protein found in gastric juice.",
+    does:"Studied for soft-tissue, tendon, ligament, and gut healing, plus reduced inflammation.",
+    dose:"250–500 mcg, 1–2×/day SubQ (often near the injury site).",
+    half:"~4 hrs", duration:"6–8 hrs" },
+  { name:"TB-500 (Thymosin β4)", tag:"Healing / repair", col:"#3DD68C",
+    desc:"A synthetic fragment of Thymosin beta-4, a protein involved in cell migration and repair.",
+    does:"Promotes tissue repair, flexibility, and recovery; frequently paired with BPC-157.",
+    dose:"2–2.5 mg, 2×/week SubQ for a loading phase, then weekly maintenance.",
+    half:"Several days", duration:"Systemic" },
+  { name:"Retatrutide", tag:"Metabolic / GLP", col:"#E07B3A",
+    desc:"An investigational triple agonist (GLP-1 / GIP / glucagon receptors).",
+    does:"Targets significant weight loss and metabolic improvement; titrated up slowly.",
+    dose:"Weekly SubQ, titrated (e.g. 0.5→12 mg over weeks). Follow a titration schedule.",
+    half:"~6 days", duration:"Weekly dosing" },
+  { name:"Selank", tag:"Nootropic / mood", col:"#3B8BF0",
+    desc:"A synthetic anxiolytic peptide based on the immunomodulator tuftsin.",
+    does:"Used for anxiety reduction, calm focus, and stress resilience without sedation.",
+    dose:"~250–500 mcg/day intranasal (typically split into sprays).",
+    half:"~few min (nasal)", duration:"4–6 hrs CNS" },
+  { name:"Semax", tag:"Nootropic / focus", col:"#E05BA0",
+    desc:"A synthetic peptide derived from ACTH, used as a nootropic.",
+    does:"Studied for focus, memory, mental energy, and neuroprotection.",
+    dose:"~300–600 mcg/day intranasal, split into sprays.",
+    half:"~few min (nasal)", duration:"4–6 hrs CNS" },
+  { name:"GHK-Cu", tag:"Skin / hair", col:"#6FD6C7",
+    desc:"A naturally occurring copper-binding tripeptide.",
+    does:"Used (topically/SubQ) for skin remodeling, collagen, wound healing, and hair.",
+    dose:"1–2 mg/day SubQ, or topical formulations for skin/hair.",
+    half:"Short", duration:"Local / systemic" },
+  { name:"Tesamorelin", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A stabilized GHRH analog, FDA-approved to reduce visceral fat in specific conditions.",
+    does:"Boosts GH/IGF-1; targeted at visceral (belly) fat reduction.",
+    dose:"1–2 mg/day SubQ, typically evening.",
+    half:"~25–40 min", duration:"Hours" },
+];
 
 let state = load();
 let viewDate = new Date(); viewDate.setHours(0,0,0,0);
@@ -587,6 +665,34 @@ function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",
 function emptyState(icon,title,body){
   return `<div class="empty"><div class="big">${icon}</div><b>${title}</b><p>${body}</p></div>`; }
 
+/* ---------- library ---------- */
+function renderLibrary(){
+  $("#libList").innerHTML = LIBRARY.map(p=>`
+    <div class="card" style="padding:14px">
+      <div class="card-head" style="align-items:flex-start">
+        <div class="swatch" style="background:${p.col};align-self:stretch"></div>
+        <div class="item-body">
+          <div class="item-name" style="white-space:normal">${esc(p.name)}
+            <span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(p.tag)}</span></div>
+          <div style="font-size:13px;color:#cfd1d8;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>
+          <div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>
+          <div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px">Half-life ${esc(p.half)} · ${esc(p.duration)}</div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+function calcRecon(){
+  const vial=parseFloat($("#rcVial").value), bac=parseFloat($("#rcBac").value), dose=parseFloat($("#rcDose").value);
+  if(!vial||!bac||!dose){ alert("Fill in all three fields."); return; }
+  const concMgMl=vial/bac, concMcgMl=concMgMl*1000;
+  const mlNeeded=dose/concMcgMl, unitsNeeded=mlNeeded*100;
+  $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
+  $("#rcUnits").textContent=`${unitsNeeded.toFixed(1)} units`;
+  $("#rcMl").textContent=`= ${mlNeeded.toFixed(3)} ml on a 1cc (100-unit) syringe`;
+  $("#rcResult").classList.remove("hidden");
+}
+
 /* ---------- navigation ---------- */
 function render(){
   renderHeader();
@@ -594,13 +700,14 @@ function render(){
   else if(curTab==="protocol")renderProtocol();
   else if(curTab==="inventory")renderInventory();
   else if(curTab==="journal")renderJournal();
+  else if(curTab==="library")renderLibrary();
 }
 function switchTab(t){
   curTab=t;
   document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+t));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
   $("#fab").classList.toggle("hidden", t!=="protocol");
-  $("#dateNav").style.visibility = (t==="inventory")?"hidden":"visible";
+  $("#dateNav").style.visibility = (t==="inventory"||t==="library")?"hidden":"visible";
   render();
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -609,6 +716,7 @@ $("#prevDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()-1); render(); };
 $("#nextDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()+1); render(); };
 $("#todayBtn").onclick=()=>{ viewDate=new Date(); viewDate.setHours(0,0,0,0); render(); };
 $("#saveJournal").onclick=saveJournal;
+$("#rcCalc").onclick=calcRecon;
 $("#moodRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{
   const on=b.classList.contains("sel");
   $("#moodRow").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
