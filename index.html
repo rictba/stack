@@ -367,7 +367,13 @@ function renderProtocol(){
       <button class="mini-btn" data-edit="${it.id}">Edit</button>
     </div></div>`;
   }).join("");
+  list.innerHTML += `<button class="btn danger" id="clearAll" style="margin-top:18px">Remove all items</button>`;
   list.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
+  $("#clearAll").onclick=()=>{
+    if(confirm(`Remove all ${state.items.length} items from your protocol?\n\nThis also clears their inventory. Past dose logs and journal entries are kept.`)){
+      state.items=[]; save(); render();
+    }
+  };
 }
 
 function renderInventory(){
