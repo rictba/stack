@@ -326,8 +326,12 @@ let viewDate = new Date(); viewDate.setHours(0,0,0,0);
 let curTab = "today";
 
 function load(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d&&d.items) return d; }catch(e){}
-  return { items: [], logs: {}, journal: {} };
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if(!d || !d.items) d = { items: [], logs: {}, journal: {} };
+  // seed the reference library on first run; afterwards it's user-editable
+  if(!Array.isArray(d.library)) d.library = LIBRARY.map(p=>({id:uid(), ...p}));
+  return d;
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 
@@ -667,20 +671,68 @@ function emptyState(icon,title,body){
 
 /* ---------- library ---------- */
 function renderLibrary(){
-  $("#libList").innerHTML = LIBRARY.map(p=>`
+  const list=$("#libList");
+  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 12px">+ Add to library</button>` +
+    (state.library.length===0 ? emptyState("📖","Library is empty","Tap “Add to library” to add a peptide or supplement reference.") :
+    state.library.map(p=>`
     <div class="card" style="padding:14px">
       <div class="card-head" style="align-items:flex-start">
-        <div class="swatch" style="background:${p.col};align-self:stretch"></div>
+        <div class="swatch" style="background:${p.col||'#7B6FE8'};align-self:stretch"></div>
         <div class="item-body">
           <div class="item-name" style="white-space:normal">${esc(p.name)}
-            <span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(p.tag)}</span></div>
-          <div style="font-size:13px;color:#cfd1d8;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>
-          <div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>
-          <div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:8px">Half-life ${esc(p.half)} · ${esc(p.duration)}</div>
+            ${p.tag?`<span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(p.tag)}</span>`:''}</div>
+          ${p.desc?`<div style="font-size:13px;color:#cfd1d8;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>`:''}
+          ${p.does?`<div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>`:''}
+          ${p.dose?`<div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>`:''}
+          ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
+          <div style="margin-top:10px">
+            <button class="mini-btn" data-libedit="${p.id}">Edit</button>
+            <button class="mini-btn" data-libdel="${p.id}" style="color:var(--red);margin-left:8px">Remove</button>
+          </div>
         </div>
       </div>
-    </div>`).join("");
+    </div>`).join(""));
+  $("#libAdd").onclick=()=>openLibEditor(null);
+  list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
+  list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
+    const p=state.library.find(x=>x.id===el.dataset.libdel);
+    if(confirm(`Remove "${p.name}" from the library?`)){
+      state.library=state.library.filter(x=>x.id!==p.id); save(); render();
+    }
+  });
+}
+function openLibEditor(id){
+  const p = id ? state.library.find(x=>x.id===id) : {col:COLORS[state.library.length%COLORS.length]};
+  const F=(label,key,ph,area)=>area
+    ? `<div class="field"><label>${label}</label><textarea id="lf_${key}" rows="2" placeholder="${ph}">${esc(p[key]||'')}</textarea></div>`
+    : `<div class="field"><label>${label}</label><input id="lf_${key}" placeholder="${ph}" value="${esc(p[key]||'')}"></div>`;
+  $("#sheet").innerHTML = `
+    <h2>${id?"Edit reference":"Add to library"}</h2>
+    ${F("Name","name","e.g. BPC-157")}
+    ${F("Category / tag","tag","e.g. Healing / repair")}
+    ${F("What it is","desc","Short description",true)}
+    ${F("Used for","does","What it does / benefits",true)}
+    ${F("Typical dose","dose","e.g. 250–500 mcg/day SubQ",true)}
+    <div class="row2">
+      ${F("Half-life","half","e.g. ~4 hrs")}
+      ${F("Duration","duration","e.g. 6–8 hrs")}
+    </div>
+    <button class="btn" id="lfSave">${id?"Save changes":"Add to library"}</button>
+    ${id?'<button class="btn danger" id="lfDelete">Remove from library</button>':''}
+    <button class="btn ghost" id="lfCancel">Cancel</button>`;
+  $("#lfSave").onclick=()=>{
+    const name=$("#lf_name").value.trim(); if(!name){$("#lf_name").focus();return;}
+    const rec = id ? state.library.find(x=>x.id===id) : {id:uid(), col:p.col};
+    ["name","tag","desc","does","dose","half","duration"].forEach(k=>rec[k]=$("#lf_"+k).value.trim());
+    if(!id) state.library.push(rec);
+    save(); closeSheet(); render();
+  };
+  if(id) $("#lfDelete").onclick=()=>{
+    if(confirm(`Remove "${p.name}" from the library?`))
+    { state.library=state.library.filter(x=>x.id!==id); save(); closeSheet(); render(); }
+  };
+  $("#lfCancel").onclick=closeSheet;
+  $("#scrim").classList.add("open");
 }
 function calcRecon(){
   const vial=parseFloat($("#rcVial").value), bac=parseFloat($("#rcBac").value), dose=parseFloat($("#rcDose").value);
