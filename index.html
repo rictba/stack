@@ -365,15 +365,16 @@ function renderProtocol(){
         ${it.mfr?`<div class="item-sub" style="color:#9a9da8">🏷 ${esc(it.mfr)}</div>`:''}
       </div>
       <button class="mini-btn" data-edit="${it.id}">Edit</button>
+      <button class="mini-btn" data-del="${it.id}" style="color:var(--red)">Remove</button>
     </div></div>`;
   }).join("");
-  list.innerHTML += `<button class="btn danger" id="clearAll" style="margin-top:18px">Remove all items</button>`;
   list.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
-  $("#clearAll").onclick=()=>{
-    if(confirm(`Remove all ${state.items.length} items from your protocol?\n\nThis also clears their inventory. Past dose logs and journal entries are kept.`)){
-      state.items=[]; save(); render();
+  list.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
+    const it=state.items.find(i=>i.id===el.dataset.del);
+    if(confirm(`Remove "${it.name}" from your protocol?\n\nPast dose logs and journal entries are kept.`)){
+      state.items=state.items.filter(i=>i.id!==it.id); save(); render();
     }
-  };
+  });
 }
 
 function renderInventory(){
