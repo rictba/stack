@@ -540,11 +540,12 @@ function saveJournal(){
 
 /* ---------- editor sheet ---------- */
 let editId=null;
-function openEditor(id){
+function openEditor(id, prefill){
   editId=id;
   const it = id ? state.items.find(i=>i.id===id) : {
     name:"", type:"peptide", dose:"", slots:["AM"], color:COLORS[state.items.length%COLORS.length],
-    schedule:{type:"daily"}, trackInv:false, dosesLeft:0, capacity:30, lowAt:5
+    schedule:{type:"daily"}, trackInv:false, dosesLeft:0, capacity:30, lowAt:5,
+    ...(prefill||{})
   };
   const sch=it.schedule||{type:"daily"};
   const sheet=$("#sheet");
@@ -686,13 +687,19 @@ function renderLibrary(){
           ${p.dose?`<div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>`:''}
           ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
           <div style="margin-top:10px">
-            <button class="mini-btn" data-libedit="${p.id}">Edit</button>
+            <button class="mini-btn" data-libadd="${p.id}">+ Add to protocol</button>
+            <button class="mini-btn" data-libedit="${p.id}" style="margin-left:8px">Edit</button>
             <button class="mini-btn" data-libdel="${p.id}" style="color:var(--red);margin-left:8px">Remove</button>
           </div>
         </div>
       </div>
     </div>`).join(""));
   $("#libAdd").onclick=()=>openLibEditor(null);
+  list.querySelectorAll("[data-libadd]").forEach(el=>el.onclick=()=>{
+    const p=state.library.find(x=>x.id===el.dataset.libadd);
+    const type=/supp|vitamin|mineral/i.test(p.tag||"") ? "supplement" : "peptide";
+    openEditor(null, {name:p.name, dose:p.dose||"", type});
+  });
   list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
   list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
     const p=state.library.find(x=>x.id===el.dataset.libdel);
