@@ -362,6 +362,7 @@ function renderProtocol(){
         <div class="item-name">${esc(it.name)}
           <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
         <div class="item-sub">${esc(it.dose||'—')} · ${slotsFor(it).join(' / ')} · ${sch}</div>
+        ${it.mfr?`<div class="item-sub" style="color:#9a9da8">🏷 ${esc(it.mfr)}</div>`:''}
       </div>
       <button class="mini-btn" data-edit="${it.id}">Edit</button>
     </div></div>`;
@@ -469,6 +470,8 @@ function openEditor(id){
       </div></div>
     <div class="field"><label>Dose</label>
       <input id="fDose" placeholder="e.g. 250mcg, 5g, 2 caps" value="${esc(it.dose||'')}"></div>
+    <div class="field"><label>Manufacturer / source <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="fMfr" placeholder="e.g. Thorne, Core Peptides" value="${esc(it.mfr||'')}"></div>
     <div class="field"><label>When (timing)</label>
       <div class="seg" id="fSlots">
         ${SLOT_ORDER.map(s=>`<button data-v="${s}" class="${slotsFor(it).includes(s)?'sel':''}">${s}</button>`).join("")}
@@ -547,7 +550,7 @@ function openEditor(id){
     if(work.type==="cycle"){schedule.daysOn=+work.daysOn||1;schedule.daysOff=+work.daysOff||0;schedule.startDate=work.startDate;}
     if(work.type==="weekly")schedule.days=work.days.slice().sort();
     const rec = id ? state.items.find(i=>i.id===id) : {id:uid(),color:it.color};
-    rec.name=name; rec.type=type; rec.dose=$("#fDose").value.trim();
+    rec.name=name; rec.type=type; rec.dose=$("#fDose").value.trim(); rec.mfr=$("#fMfr").value.trim();
     rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track;
     if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
       rec.capacity=Math.max(rec.capacity||0, rec.dosesLeft); }
