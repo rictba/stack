@@ -704,7 +704,7 @@ function renderLibrary(){
   list.querySelectorAll("[data-libadd]").forEach(el=>el.onclick=()=>{
     const p=state.library.find(x=>x.id===el.dataset.libadd);
     const type=/supp|vitamin|mineral/i.test(p.tag||"") ? "supplement" : "peptide";
-    openEditor(null, {name:p.name, dose:p.dose||"", type});
+    openEditor(null, {name:p.name, type});
   });
   list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
   list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
