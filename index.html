@@ -329,9 +329,19 @@ const LIBRARY = [
     half:"Short", duration:"Local / systemic" },
   { name:"Tesamorelin", tag:"Growth hormone", col:"#7B6FE8",
     desc:"A stabilized GHRH analog, FDA-approved to reduce visceral fat in specific conditions.",
-    does:"Boosts GH/IGF-1; targeted at visceral (belly) fat reduction.",
-    dose:"1–2 mg/day SubQ, typically evening.",
+    does:"Boosts GH/IGF-1; targeted at visceral (belly) fat reduction. Check IGF-1 at 6 weeks before increasing.",
+    dose:"20 mg vial + 10 ml BAC = 2 mg/ml. Start 1 mg/day = 50 u, bedtime fasted.",
     half:"~25–40 min", duration:"Hours" },
+  { name:"Epithalon", tag:"Longevity / anti-aging", col:"#6FD6C7",
+    desc:"A 4-amino-acid peptide studied for telomerase activation and circadian/pineal regulation.",
+    does:"Used in short cycles for anti-aging, sleep, and stress resilience.",
+    dose:"5 mg/day = 30 u SubQ, nightly × 10 nights. 50 mg vial + 3 ml BAC = 16.67 mg/ml (1 vial = 1 cycle). Cycle: 10 on, 2–4 months off.",
+    half:"Short", duration:"10-day cycles" },
+  { name:"KPV", tag:"Gut / anti-inflammatory", col:"#3DD68C",
+    desc:"A tripeptide fragment of alpha-MSH (arginate salt capsules).",
+    does:"Gut inflammation and gut-brain-axis anxiety support. Pairs with BPC-157 and Selank.",
+    dose:"500 mcg 1×/day morning fasted → 2×/day after wk3. Oral caps. Cycle 4–8 wk on, 2–4 wk off.",
+    half:"Short", duration:"Cycled" },
   // ---- supplements ----
   { name:"Vitamin D3", kind:"supplement", tag:"Vitamin", col:"#F2B33D",
     desc:"A fat-soluble vitamin/prohormone the body makes from sunlight.",
@@ -358,20 +368,42 @@ const LIBRARY = [
     does:"Supports immune function, hormones, and skin; don't overdo long-term.",
     dose:"15–30 mg/day with food (balance with copper if chronic).",
     half:"—", duration:"Daily" },
+  { name:"NR (Nicotinamide Riboside)", kind:"supplement", tag:"NAD+ / longevity", col:"#F2B33D",
+    desc:"A NAD+ precursor.",
+    does:"Supports cellular energy/NAD+ levels. MUST pair with TMG — without it, NR depletes methyl groups (→ high homocysteine, anxiety, brain fog, fatigue).",
+    dose:"1,000 mg daily, morning.",
+    half:"—", duration:"Daily" },
+  { name:"TMG", kind:"supplement", tag:"Methyl donor", col:"#F2553D",
+    desc:"Trimethylglycine (betaine anhydrous), a methyl donor.",
+    does:"Replaces methyl groups consumed during NR/NAD+ conversion; mandatory alongside NR.",
+    dose:"500 mg daily, same time as NR.",
+    half:"—", duration:"Daily" },
 ];
 
-/* ---------- your protocol (imported from the old app) ---------- */
+/* ---------- your protocol (from STACK_CONTEXT) ---------- */
+const STARTER_V = 2;
 const STARTER = [
-  { name:"CJC-1295 + Ipamorelin", type:"peptide", dose:"12 units (200 mcg ea) · fasted, bedtime",
-    slots:["PM"], schedule:{type:"weekly", days:[1,2,3,4,5]}, inject:true, color:"#7B6FE8" },
-  { name:"BPC-157 + TB-500", type:"peptide", dose:"5 mg combined vial",
-    slots:["AM"], schedule:{type:"weekly", days:[1,4]}, inject:true, color:"#3DD68C" },
-  { name:"Retatrutide", type:"peptide", dose:"~0.3 mg (titrating)",
-    slots:["AM"], schedule:{type:"cycle", daysOn:1, daysOff:3, startDate:"2026-05-22"}, inject:true, color:"#E8896F" },
-  { name:"Selank", type:"peptide", dose:"400 mcg/spray",
+  // injections — bedtime, fasted 2+ hrs
+  { name:"CJC-1295 + Ipamorelin", type:"peptide", dose:"9 u (wk1–2) → 12 u (wk3+) · 150–200 mcg ea · fasted",
+    slots:["PM"], schedule:{type:"weekly", days:[1,2,3,4,5]}, inject:true, color:"#7B6FE8",
+    trackInv:true, dosesLeft:50, capacity:50, lowAt:6 },
+  { name:"BPC-157 + TB-500", type:"peptide", dose:"500 mcg (250 ea) = 50 u · starts Jun 29",
+    slots:["PM"], schedule:{type:"weekly", days:[1,4]}, inject:true, color:"#3DD68C",
+    trackInv:true, dosesLeft:20, capacity:20, lowAt:3 },
+  { name:"Retatrutide", type:"peptide", dose:"~0.3 mg (titrating) · every 4 days",
+    slots:["PM"], schedule:{type:"cycle", daysOn:1, daysOff:3, startDate:"2026-05-22"}, inject:true, color:"#E07B3A" },
+  // nasal — morning
+  { name:"Selank", type:"peptide", dose:"400 mcg (1 spray/nostril) · within 30–45 min of waking",
     slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#3DA8D6" },
-  { name:"Semax", type:"peptide", dose:"400 mcg/spray",
-    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#D67BD6" },
+  { name:"Semax", type:"peptide", dose:"200–400 mcg · situational (pre-workout/focus)",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#E05BA0" },
+  // oral — morning
+  { name:"KPV", type:"peptide", dose:"500 mcg 1×/day fasted → 2×/day after wk3",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#6FD6C7" },
+  { name:"NR (Nicotinamide Riboside)", type:"supplement", dose:"1,000 mg · MUST take with TMG",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#F2B33D" },
+  { name:"TMG", type:"supplement", dose:"500 mg · same time as NR",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#F2553D" },
 ];
 
 let state = load();
@@ -515,7 +547,7 @@ function renderToday(){
 
 function renderProtocol(){
   const list=$("#protoList");
-  const importBtn = !state.starterImported
+  const importBtn = state.starterV !== STARTER_V
     ? `<button class="btn" id="importStarter" style="margin-bottom:14px">↓ Import my protocol (${STARTER.length} items)</button>` : "";
   if(state.items.length===0){
     list.innerHTML = importBtn + emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
@@ -547,8 +579,11 @@ function renderProtocol(){
 function wireImport(list){
   const btn=list.querySelector("#importStarter"); if(!btn) return;
   btn.onclick=()=>{
+    // refresh cleanly: drop any existing items that match a starter name, then add
+    const names=new Set(STARTER.map(s=>s.name));
+    state.items=state.items.filter(i=>!names.has(i.name));
     STARTER.forEach(s=>state.items.push({id:uid(), ...s}));
-    state.starterImported=true; save(); render();
+    state.starterV=STARTER_V; save(); render();
   };
 }
 
