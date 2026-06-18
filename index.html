@@ -360,6 +360,20 @@ const LIBRARY = [
     half:"—", duration:"Daily" },
 ];
 
+/* ---------- your protocol (imported from the old app) ---------- */
+const STARTER = [
+  { name:"CJC-1295 + Ipamorelin", type:"peptide", dose:"12 units (200 mcg ea) · fasted, bedtime",
+    slots:["PM"], schedule:{type:"weekly", days:[1,2,3,4,5]}, inject:true, color:"#7B6FE8" },
+  { name:"BPC-157 + TB-500", type:"peptide", dose:"5 mg combined vial",
+    slots:["AM"], schedule:{type:"weekly", days:[1,4]}, inject:true, color:"#3DD68C" },
+  { name:"Retatrutide", type:"peptide", dose:"~0.3 mg (titrating)",
+    slots:["AM"], schedule:{type:"cycle", daysOn:1, daysOff:3, startDate:"2026-05-22"}, inject:true, color:"#E8896F" },
+  { name:"Selank", type:"peptide", dose:"400 mcg/spray",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#3DA8D6" },
+  { name:"Semax", type:"peptide", dose:"400 mcg/spray",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#D67BD6" },
+];
+
 let state = load();
 let viewDate = new Date(); viewDate.setHours(0,0,0,0);
 let curTab = "today";
@@ -501,11 +515,13 @@ function renderToday(){
 
 function renderProtocol(){
   const list=$("#protoList");
+  const importBtn = !state.starterImported
+    ? `<button class="btn" id="importStarter" style="margin-bottom:14px">↓ Import my protocol (${STARTER.length} items)</button>` : "";
   if(state.items.length===0){
-    list.innerHTML = emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
-    return;
+    list.innerHTML = importBtn + emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
+    wireImport(list); return;
   }
-  list.innerHTML = state.items.map(it=>{
+  list.innerHTML = importBtn + state.items.map(it=>{
     const sch = scheduleLabel(it.schedule);
     return `<div class="card"><div class="card-head">
       <div class="swatch" style="background:${it.color};height:42px"></div>
@@ -519,6 +535,7 @@ function renderProtocol(){
       <button class="mini-btn" data-del="${it.id}" style="color:var(--red)">Remove</button>
     </div></div>`;
   }).join("");
+  wireImport(list);
   list.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
   list.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
     const it=state.items.find(i=>i.id===el.dataset.del);
@@ -526,6 +543,13 @@ function renderProtocol(){
       state.items=state.items.filter(i=>i.id!==it.id); save(); render();
     }
   });
+}
+function wireImport(list){
+  const btn=list.querySelector("#importStarter"); if(!btn) return;
+  btn.onclick=()=>{
+    STARTER.forEach(s=>state.items.push({id:uid(), ...s}));
+    state.starterImported=true; save(); render();
+  };
 }
 
 function renderInventory(){
