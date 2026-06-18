@@ -97,6 +97,13 @@
   .mood-row{display:flex;gap:8px;justify-content:space-between}
   .mood-row button{font-size:26px;width:44px;height:44px;border-radius:12px;filter:grayscale(1) opacity(.45);transition:.15s}
   .mood-row button.sel{filter:none;background:var(--surface2)}
+  .rate-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+  .rate-row:last-child{border-bottom:none}
+  .rate-label{font-size:14px;font-weight:600;color:var(--text);width:58px;flex:0 0 auto}
+  .rate-btns{display:flex;gap:3px}
+  .rate-btns button{font-size:22px;width:38px;height:38px;border-radius:10px;filter:grayscale(1) opacity(.4);transition:.15s}
+  .rate-btns button.sel{filter:none;background:var(--surface2)}
+  .site-sel{margin-top:8px;background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:7px 10px;font-size:13px;width:100%;max-width:200px}
   textarea.note{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;
     color:var(--text);padding:14px;min-height:90px;resize:vertical;font-size:15px;line-height:1.5}
   textarea.note:focus{outline:none;border-color:var(--accent)}
@@ -163,11 +170,38 @@
 <main>
   <!-- TODAY -->
   <section class="tab active" id="tab-today">
+    <div class="group-label">How are you feeling?</div>
+    <div class="card" style="padding:6px 14px">
+      <div class="rate-row"><span class="rate-label">Sleep</span>
+        <div class="rate-btns" data-metric="sleepQ">
+          <button data-v="1">😣</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">😄</button>
+        </div></div>
+      <div class="rate-row"><span class="rate-label">Energy</span>
+        <div class="rate-btns" data-metric="energy">
+          <button data-v="1">🪫</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">⚡</button>
+        </div></div>
+      <div class="rate-row"><span class="rate-label">Mood</span>
+        <div class="rate-btns" data-metric="mood">
+          <button data-v="1">😣</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">😄</button>
+        </div></div>
+    </div>
+    <div class="j-grid" style="margin-top:14px">
+      <div class="j-field">
+        <label>Hours slept</label>
+        <input id="jHours" type="number" inputmode="decimal" placeholder="—"><span class="unit">hours</span>
+      </div>
+      <div class="j-field">
+        <label>Morning weight</label>
+        <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit">lb / kg</span>
+      </div>
+    </div>
+    <div class="group-label">Protocol</div>
     <div class="progress-card">
       <div class="progress-top"><b>Daily progress</b><span id="progTxt">0 / 0</span></div>
       <div class="bar"><i id="progBar" style="width:0%"></i></div>
     </div>
     <div id="todayList"></div>
+    <textarea class="note" id="jNote" placeholder="Notes — sides, observations, how you feel…" style="margin-top:14px"></textarea>
   </section>
 
   <!-- PROTOCOL -->
@@ -180,30 +214,6 @@
     <div id="invList"></div>
   </section>
 
-  <!-- JOURNAL -->
-  <section class="tab" id="tab-journal">
-    <div class="j-grid">
-      <div class="j-field">
-        <label>Weight</label>
-        <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit">lb / kg</span>
-      </div>
-      <div class="j-field">
-        <label>Sleep</label>
-        <input id="jSleep" type="number" inputmode="decimal" placeholder="—"><span class="unit">hours</span>
-      </div>
-    </div>
-    <div class="j-field" style="margin-bottom:14px">
-      <label>Mood / energy</label>
-      <div class="mood-row" id="moodRow">
-        <button data-m="1">😣</button><button data-m="2">🙁</button><button data-m="3">😐</button>
-        <button data-m="4">🙂</button><button data-m="5">😄</button>
-      </div>
-    </div>
-    <textarea class="note" id="jNote" placeholder="Notes — sides, observations, how you feel…"></textarea>
-    <button class="btn" id="saveJournal" style="margin-top:14px">Save journal</button>
-    <div class="group-label">Recent entries</div>
-    <div id="journalHist"></div>
-  </section>
 
   <!-- LIBRARY -->
   <section class="tab" id="tab-library">
@@ -246,10 +256,6 @@
     <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg>
     Inventory
   </button>
-  <button data-tab="journal">
-    <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-    Journal
-  </button>
   <button data-tab="library">
     <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     Library
@@ -271,6 +277,7 @@ const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
+const SITES = ["Abdomen L","Abdomen R","Thigh L","Thigh R","Glute L","Glute R","Delt L","Delt R","Nasal","Oral","Other"];
 
 /* ---------- peptide reference library ---------- */
 const LIBRARY = [
@@ -353,11 +360,13 @@ function scheduledToday(item, date){
 function slotsFor(item){ const s=item.slots&&item.slots.length?item.slots:["AM"];
   return SLOT_ORDER.filter(x=>s.includes(x)); }
 function logKey(item, slot){ return item.id+"__"+slot; }
+function isInject(item){ return item.inject!==undefined ? item.inject : item.type==="peptide"; }
 
-/* ---------- dose logging ---------- */
-function isLogged(item, slot, date){
-  const day = state.logs[todayKey(date)]; return !!(day && day[logKey(item,slot)]);
-}
+/* ---------- dose logging (entry can be a timestamp number, or {t, site}) ---------- */
+function entryOf(item, slot, date){ const day=state.logs[todayKey(date)]; return day ? day[logKey(item,slot)] : undefined; }
+function tsOf(e){ return e==null ? null : (typeof e==="object" ? e.t : e); }
+function siteOf(e){ return (e && typeof e==="object") ? (e.site||"") : ""; }
+function isLogged(item, slot, date){ return !!entryOf(item, slot, date); }
 function toggleDose(item, slot){
   const dk = todayKey(viewDate);
   state.logs[dk] = state.logs[dk] || {};
@@ -366,10 +375,17 @@ function toggleDose(item, slot){
     delete state.logs[dk][k];
     if(item.trackInv) item.dosesLeft = Math.min((item.dosesLeft||0)+1, item.capacity||9999);
   } else {
-    state.logs[dk][k] = Date.now();
+    state.logs[dk][k] = { t: Date.now(), site: "" };
     if(item.trackInv) item.dosesLeft = Math.max((item.dosesLeft||0)-1, 0);
   }
   save(); render();
+}
+function setSite(item, slot, site){
+  const dk = todayKey(viewDate); const k = logKey(item, slot);
+  const e = state.logs[dk] && state.logs[dk][k]; if(!e) return;
+  if(typeof e === "object") e.site = site;
+  else state.logs[dk][k] = { t: e, site };
+  save();
 }
 
 /* ---------- rendering ---------- */
@@ -385,6 +401,17 @@ function renderHeader(){
 }
 
 function renderToday(){
+  // ---- daily metrics (mood / sleep / energy / hours / weight / note) ----
+  const j = state.journal[todayKey(viewDate)] || {};
+  document.querySelectorAll(".rate-btns").forEach(row=>{
+    const m = row.dataset.metric;
+    row.querySelectorAll("button").forEach(b=>b.classList.toggle("sel", +b.dataset.v===j[m]));
+  });
+  $("#jHours").value = j.hours ?? "";
+  $("#jWeight").value = j.weight ?? "";
+  $("#jNote").value = j.note ?? "";
+
+  // ---- protocol checklist ----
   const list = $("#todayList");
   const items = state.items.filter(i=>scheduledToday(i, viewDate));
   if(state.items.length===0){
@@ -395,7 +422,6 @@ function renderToday(){
     list.innerHTML = emptyState("🌙","Nothing scheduled","No items are scheduled for this day — enjoy the off-cycle.");
     $("#progTxt").textContent="0 / 0"; $("#progBar").style.width="0%"; return;
   }
-  // build slot -> entries
   const bySlot = {};
   let total=0, done=0;
   items.forEach(it=>slotsFor(it).forEach(sl=>{
@@ -407,16 +433,21 @@ function renderToday(){
     if(!bySlot[sl]) return;
     html += `<div class="group-label">${sl}</div>`;
     bySlot[sl].forEach(it=>{
-      const logged = isLogged(it,sl,viewDate);
-      const ts = logged ? state.logs[todayKey(viewDate)][logKey(it,sl)] : null;
+      const e = entryOf(it,sl,viewDate);
+      const logged = !!e, ts = tsOf(e), site = siteOf(e);
       const low = it.trackInv && (it.dosesLeft||0) <= (it.lowAt||0);
-      html += `<div class="item ${logged?'done':''}" data-toggle="${it.id}" data-slot="${sl}">
-        <div class="check">✓</div>
+      const siteSel = (logged && isInject(it)) ? `<select class="site-sel" data-sitekey="${it.id}__${sl}">
+          <option value="">📍 Injection site…</option>
+          ${SITES.map(s=>`<option ${site===s?'selected':''}>${s}</option>`).join("")}
+        </select>` : "";
+      html += `<div class="item ${logged?'done':''}">
+        <div class="check" data-toggle="${it.id}" data-slot="${sl}">✓</div>
         <div class="swatch" style="background:${it.color}"></div>
         <div class="item-body">
-          <div class="item-name">${esc(it.name)}
+          <div class="item-name" data-toggle="${it.id}" data-slot="${sl}">${esc(it.name)}
             <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
           <div class="item-sub">${esc(it.dose||'')}${ts?' · <span class="ts">'+fmtTime(ts)+'</span>':''}${low?' · <span class="low-flag">⚠ low</span>':''}</div>
+          ${siteSel}
         </div>
       </div>`;
     });
@@ -427,6 +458,10 @@ function renderToday(){
   list.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{
     const it = state.items.find(i=>i.id===el.dataset.toggle);
     toggleDose(it, el.dataset.slot);
+  });
+  list.querySelectorAll(".site-sel").forEach(sel=>sel.onchange=()=>{
+    const [id,slot]=sel.dataset.sitekey.split("__");
+    setSite(state.items.find(i=>i.id===id), slot, sel.value);
   });
 }
 
@@ -497,46 +532,9 @@ function restock(id){
   save(); render();
 }
 
-function renderJournal(){
-  const j = state.journal[todayKey(viewDate)] || {};
-  $("#jWeight").value = j.weight ?? "";
-  $("#jSleep").value = j.sleep ?? "";
-  $("#jNote").value = j.note ?? "";
-  $("#moodRow").querySelectorAll("button").forEach(b=>
-    b.classList.toggle("sel", +b.dataset.m===j.mood));
-  // history
-  const moods={1:"😣",2:"🙁",3:"😐",4:"🙂",5:"😄"};
-  const keys = Object.keys(state.journal).filter(k=>{
-    const e=state.journal[k]; return e.weight||e.sleep||e.mood||e.note;
-  }).sort().reverse().slice(0,14);
-  const hist=$("#journalHist");
-  if(keys.length===0){ hist.innerHTML=`<div class="empty" style="padding:24px"><p>No entries yet.</p></div>`; return; }
-  hist.innerHTML = keys.map(k=>{
-    const e=state.journal[k]; const d=new Date(k+"T00:00:00");
-    const bits=[]; if(e.weight)bits.push(e.weight+" wt"); if(e.sleep)bits.push(e.sleep+"h sleep");
-    return `<div class="card" style="padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <b style="font-size:14px">${d.toLocaleDateString([],{weekday:"short",month:"short",day:"numeric"})}</b>
-        <span style="font-size:20px">${e.mood?moods[e.mood]:""}</span>
-      </div>
-      ${bits.length?`<div class="item-sub" style="margin-top:4px">${bits.join(" · ")}</div>`:""}
-      ${e.note?`<div style="font-size:14px;color:#cfd1d8;margin-top:6px;line-height:1.45">${esc(e.note)}</div>`:""}
-    </div>`;
-  }).join("");
-}
-
-function saveJournal(){
-  const dk=todayKey(viewDate);
-  const e=state.journal[dk]||{};
-  e.weight=$("#jWeight").value?parseFloat($("#jWeight").value):null;
-  e.sleep=$("#jSleep").value?parseFloat($("#jSleep").value):null;
-  e.note=$("#jNote").value.trim();
-  const sel=$("#moodRow").querySelector("button.sel");
-  e.mood=sel?+sel.dataset.m:null;
-  state.journal[dk]=e; save(); renderJournal();
-  const btn=$("#saveJournal"); btn.textContent="Saved ✓";
-  setTimeout(()=>btn.textContent="Save journal",1200);
-}
+// daily metrics auto-save into state.journal[date]
+function journalToday(){ const dk=todayKey(viewDate); return state.journal[dk] = state.journal[dk] || {}; }
+function setMetric(key, val){ journalToday()[key] = val; save(); }
 
 /* ---------- editor sheet ---------- */
 let editId=null;
@@ -576,6 +574,13 @@ function openEditor(id, prefill){
     <div id="schOpts"></div>
 
     <div class="field" style="display:flex;justify-content:space-between;align-items:center">
+      <label style="margin:0">Injection (pick site)</label>
+      <div class="seg" id="fInject" style="width:120px">
+        <button data-v="1" class="${isInject(it)?'sel':''}">On</button>
+        <button data-v="0" class="${!isInject(it)?'sel':''}">Off</button>
+      </div></div>
+
+    <div class="field" style="display:flex;justify-content:space-between;align-items:center">
       <label style="margin:0">Track inventory</label>
       <div class="seg" id="fTrack" style="width:120px">
         <button data-v="1" class="${it.trackInv?'sel':''}">On</button>
@@ -591,7 +596,7 @@ function openEditor(id, prefill){
   // local working copy of schedule + track state
   let work = { type:sch.type, daysOn:sch.daysOn||5, daysOff:sch.daysOff||2,
     startDate:sch.startDate||todayKey(new Date()), days:(sch.days||[1,2,3,4,5]).slice(),
-    track: !!it.trackInv };
+    track: !!it.trackInv, inject: isInject(it) };
 
   function renderSched(){
     const o=$("#schOpts");
@@ -625,6 +630,7 @@ function openEditor(id, prefill){
   renderSched(); renderInv();
 
   seg("#fType", v=>{}); seg("#fSchedType", v=>{ work.type=v; renderSched(); });
+  seg("#fInject", v=>{ work.inject = v==="1"; });
   $("#fTrack").querySelectorAll("button").forEach(b=>b.onclick=()=>{
     $("#fTrack").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
     b.classList.add("sel"); work.track=b.dataset.v==="1"; renderInv();
@@ -641,7 +647,7 @@ function openEditor(id, prefill){
     if(work.type==="weekly")schedule.days=work.days.slice().sort();
     const rec = id ? state.items.find(i=>i.id===id) : {id:uid(),color:it.color};
     rec.name=name; rec.type=type; rec.dose=$("#fDose").value.trim(); rec.mfr=$("#fMfr").value.trim();
-    rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track;
+    rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track; rec.inject=work.inject;
     if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
       rec.capacity=Math.max(rec.capacity||0, rec.dosesLeft); }
     if(!id) state.items.push(rec);
@@ -758,7 +764,6 @@ function render(){
   if(curTab==="today")renderToday();
   else if(curTab==="protocol")renderProtocol();
   else if(curTab==="inventory")renderInventory();
-  else if(curTab==="journal")renderJournal();
   else if(curTab==="library")renderLibrary();
 }
 function switchTab(t){
@@ -774,13 +779,21 @@ $("#fab").onclick=()=>openEditor(null);
 $("#prevDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()-1); render(); };
 $("#nextDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()+1); render(); };
 $("#todayBtn").onclick=()=>{ viewDate=new Date(); viewDate.setHours(0,0,0,0); render(); };
-$("#saveJournal").onclick=saveJournal;
 $("#rcCalc").onclick=calcRecon;
-$("#moodRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{
-  const on=b.classList.contains("sel");
-  $("#moodRow").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
-  if(!on)b.classList.add("sel");
+// mood / sleep / energy ratings — tap to set (tap again to clear), auto-saved
+document.querySelectorAll(".rate-btns").forEach(row=>{
+  const m=row.dataset.metric;
+  row.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const cur=journalToday()[m], val=+b.dataset.v;
+    const next = cur===val ? null : val;
+    setMetric(m, next);
+    row.querySelectorAll("button").forEach(x=>x.classList.toggle("sel", +x.dataset.v===next));
+  });
 });
+// numeric + note fields — auto-save on input (no re-render, keeps focus)
+$("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
+$("#jWeight").oninput=e=>setMetric("weight", e.target.value?parseFloat(e.target.value):null);
+$("#jNote").oninput=e=>setMetric("note", e.target.value);
 
 render();
 
