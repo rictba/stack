@@ -54,6 +54,8 @@
 
   .group-label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
     margin:20px 4px 8px;font-weight:600}
+  .tab-intro{font-size:13px;color:var(--muted);margin:0 4px 16px;line-height:1.45}
+  .tab-intro b{color:var(--text)}
 
   .item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
     border-radius:14px;padding:14px;margin-bottom:10px;transition:.15s}
@@ -206,22 +208,8 @@
 
   <!-- PROTOCOL -->
   <section class="tab" id="tab-protocol">
+    <p class="tab-intro"><b>Your active stack.</b> The items, doses & schedules that drive your Today checklist.</p>
     <div id="protoList"></div>
-  </section>
-
-  <!-- INVENTORY -->
-  <section class="tab" id="tab-inventory">
-    <div id="invList"></div>
-  </section>
-
-
-  <!-- LIBRARY -->
-  <section class="tab" id="tab-library">
-    <div class="seg" id="libTabs" style="margin-bottom:16px">
-      <button data-v="peptide" class="sel">Peptides</button>
-      <button data-v="supplement">Supplements</button>
-    </div>
-    <div id="libCalc">
     <div class="group-label">Reconstitution calculator</div>
     <div class="card" style="padding:16px">
       <div class="row2">
@@ -240,6 +228,20 @@
         <div id="rcMl" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
       </div>
     </div>
+  </section>
+
+  <!-- INVENTORY -->
+  <section class="tab" id="tab-inventory">
+    <div id="invList"></div>
+  </section>
+
+
+  <!-- LIBRARY -->
+  <section class="tab" id="tab-library">
+    <p class="tab-intro"><b>Reference.</b> What each compound is, what it does, and recommended doses. Tap <b>+ Add to protocol</b> on anything you take.</p>
+    <div class="seg" id="libTabs" style="margin-bottom:16px">
+      <button data-v="peptide" class="sel">Peptides</button>
+      <button data-v="supplement">Supplements</button>
     </div>
     <div class="group-label" id="libHeading">Peptide library</div>
     <div id="libList"></div>
@@ -772,7 +774,6 @@ function emptyState(icon,title,body){
 /* ---------- library ---------- */
 function renderLibrary(){
   $("#libTabs").querySelectorAll("button").forEach(b=>b.classList.toggle("sel", b.dataset.v===libKind));
-  $("#libCalc").classList.toggle("hidden", libKind!=="peptide");
   $("#libHeading").textContent = libKind==="peptide" ? "Peptide library" : "Supplement library";
   const list=$("#libList");
   const entries = state.library.filter(p=>(p.kind||"peptide")===libKind);
