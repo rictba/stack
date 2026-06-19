@@ -151,6 +151,27 @@
   .btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
   .btn.danger{background:transparent;color:var(--red);margin-top:4px}
   .hidden{display:none !important}
+
+  /* disclaimer */
+  .dsc{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:none;
+    align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+  .dsc.open{display:flex}
+  .dsc-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+    width:100%;max-width:480px;margin:auto;padding:24px 20px calc(20px + env(safe-area-inset-bottom));text-align:center}
+  .dsc-shield{width:54px;height:54px;border-radius:14px;background:var(--accent-dim);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  .dsc-shield svg{width:26px;height:26px;stroke:#c5beff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dsc-card h2{margin:0;font-size:22px;font-weight:700}
+  .dsc-sub{color:var(--muted);font-size:14px;margin:4px 0 18px}
+  .dsc-row{display:flex;gap:12px;text-align:left;background:var(--surface2);border:1px solid var(--line);
+    border-radius:14px;padding:14px;margin-bottom:10px}
+  .dsc-bullet{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .dsc-bullet svg{width:18px;height:18px;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dsc-row b{display:block;font-size:15px;margin-bottom:3px}
+  .dsc-row p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+  .dsc-check{display:flex;align-items:center;gap:10px;justify-content:flex-start;
+    padding:14px 4px 4px;font-size:15px;color:var(--text);cursor:pointer}
+  .dsc-check input{width:20px;height:20px;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -273,6 +294,41 @@
 <!-- ITEM EDITOR -->
 <div class="scrim" id="scrim">
   <div class="sheet" id="sheet"></div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="dsc" id="disclaimer">
+  <div class="dsc-card">
+    <div class="dsc-shield">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h2>Important Notice</h2>
+    <div class="dsc-sub">Please read before continuing</div>
+
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:var(--accent-dim)">
+        <svg style="stroke:#c5beff" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+      <div><b>Research Logging Tool</b><p>This app is for personal research logging and organization only. It is not intended to provide guidance or recommendations of any kind.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#11402c">
+        <svg style="stroke:#3DD68C" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+      <div><b>Research Purposes Only</b><p>This app is designed for research documentation and personal logging. Users are responsible for their own research decisions.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#43360f">
+        <svg style="stroke:#F2B33D" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12c.7.6 1 1.3 1 2h6c0-.7.3-1.4 1-2a7 7 0 0 0-4-12z"/></svg></div>
+      <div><b>Reference Data Only</b><p>Reference ranges shown are from published research for reference only, not recommendations.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:var(--accent-dim)">
+        <svg style="stroke:#c5beff" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div><b>Your Responsibility</b><p>By continuing, you accept full responsibility for how you use this research log. This app is provided "as is" without warranties.</p></div>
+    </div>
+
+    <label class="dsc-check"><input type="checkbox" id="dscHide"> Don't show this again</label>
+    <button class="btn" id="dscAccept" style="margin-top:14px">I Understand and Accept</button>
+  </div>
 </div>
 
 <script>
@@ -903,6 +959,13 @@ document.querySelectorAll(".rate-btns").forEach(row=>{
 $("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
 $("#jWeight").oninput=e=>setMetric("weight", e.target.value?parseFloat(e.target.value):null);
 $("#jNote").oninput=e=>setMetric("note", e.target.value);
+
+// first-launch disclaimer
+$("#dscAccept").onclick=()=>{
+  if($("#dscHide").checked){ state.hideDisclaimer=true; save(); }
+  $("#disclaimer").classList.remove("open");
+};
+if(!state.hideDisclaimer) $("#disclaimer").classList.add("open");
 
 render();
 
