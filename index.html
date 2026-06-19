@@ -474,6 +474,32 @@ const STARTER = [
     slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#F2553D" },
 ];
 
+/* ---------- dose reference ranges (per dose unless noted) ---------- */
+const DOSE_REF = {
+  "retatrutide":{lo:1,hi:12,unit:"mg",freq:"weekly"},
+  "bpc-157":{lo:250,hi:500,unit:"mcg",freq:"1–2×/day"},
+  "tb-500 (thymosin β4)":{lo:2,hi:2.5,unit:"mg",freq:"2×/week"},
+  "tb-500":{lo:2,hi:2.5,unit:"mg",freq:"2×/week"},
+  "cjc-1295 (no dac)":{lo:100,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "cjc-1295":{lo:100,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "ipamorelin":{lo:200,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "tesamorelin":{lo:1,hi:2,unit:"mg",freq:"daily"},
+  "selank":{lo:250,hi:500,unit:"mcg",freq:"daily"},
+  "semax":{lo:200,hi:600,unit:"mcg",freq:"daily"},
+  "ghk-cu":{lo:1,hi:2,unit:"mg",freq:"daily"},
+  "epithalon":{lo:5,hi:10,unit:"mg",freq:"daily (cycle)"},
+  "kpv":{lo:250,hi:500,unit:"mcg",freq:"1–2×/day"},
+};
+function refFor(name){ return DOSE_REF[(name||"").trim().toLowerCase()] || null; }
+// reconstitution → units to draw on a 1cc / 100-unit syringe
+function drawCalc(amt, unit, vialMg, bacMl){
+  if(unit==="units") return { units:amt, ml:amt/100, mgPerMl:null };
+  const doseMg = unit==="mcg" ? amt/1000 : (unit==="mg" ? amt : null);
+  if(doseMg==null || !amt || !vialMg || !bacMl) return null;
+  const mgPerMl = vialMg/bacMl, ml = doseMg/mgPerMl;
+  return { units: ml*100, ml, mgPerMl };
+}
+
 let state = load();
 let viewDate = new Date(); viewDate.setHours(0,0,0,0);
 let curTab = "today";
@@ -717,8 +743,31 @@ function openEditor(id, prefill){
         <button data-v="peptide" class="${it.type==='peptide'?'sel':''}">Peptide</button>
         <button data-v="supplement" class="${it.type==='supplement'?'sel':''}">Supplement</button>
       </div></div>
+
+    <div class="field" id="fRouteWrap"><label>Injection route</label>
+      <div class="seg" id="fRoute">
+        <button data-v="SubQ" class="${(it.route||'SubQ')==='SubQ'?'sel':''}">SubQ</button>
+        <button data-v="IM" class="${it.route==='IM'?'sel':''}">IM</button>
+      </div></div>
+
     <div class="field"><label>Dose</label>
-      <input id="fDose" placeholder="e.g. 250mcg, 5g, 2 caps" value="${esc(it.dose||'')}"></div>
+      <div class="card" style="padding:14px;background:var(--surface2)">
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="fAmt" type="number" inputmode="decimal" step="any" placeholder="amount" value="${it.doseAmt??''}" style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+          <select id="fUnit" style="width:96px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 8px">
+            ${["mg","mcg","units","caps","g","IU"].map(u=>`<option ${((it.doseUnit||'mg')===u)?'selected':''}>${u}</option>`).join("")}
+          </select>
+        </div>
+        <div id="fRecon" class="row2" style="margin-top:10px">
+          <input id="fVial" type="number" inputmode="decimal" step="any" placeholder="vial mg" value="${it.vialMg??''}" style="background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+          <input id="fBac" type="number" inputmode="decimal" step="any" placeholder="BAC water ml" value="${it.bacMl??''}" style="background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+        </div>
+        <div id="fDoseOut" style="font-size:13px;margin-top:10px;line-height:1.5"></div>
+      </div>
+      <input id="fDose" type="hidden" value="${esc(it.dose||'')}">
+      <div class="hint" id="fDoseManual" style="margin-top:8px"></div>
+    </div>
+
     <div class="field"><label>Manufacturer / source <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input id="fMfr" placeholder="e.g. Thorne, Core Peptides" value="${esc(it.mfr||'')}"></div>
     <div class="field"><label>When (timing)</label>
@@ -735,7 +784,7 @@ function openEditor(id, prefill){
     <div id="schOpts"></div>
 
     <div class="field" style="display:flex;justify-content:space-between;align-items:center">
-      <label style="margin:0">Injection (pick site)</label>
+      <label style="margin:0">Injection — pick site <span style="font-weight:400;color:var(--muted)">(off = skip body map)</span></label>
       <div class="seg" id="fInject" style="width:120px">
         <button data-v="1" class="${isInject(it)?'sel':''}">On</button>
         <button data-v="0" class="${!isInject(it)?'sel':''}">Off</button>
@@ -788,10 +837,54 @@ function openEditor(id, prefill){
         <div class="field"><label>Warn at</label><input id="iLow" type="number" inputmode="numeric" value="${it.lowAt||5}"></div>
       </div><div class="hint">Each logged dose subtracts 1. Restock from the Inventory tab.</div>` : "";
   }
-  renderSched(); renderInv();
+  function curDose(){ return { amt:parseFloat($("#fAmt").value), unit:$("#fUnit").value,
+    vial:parseFloat($("#fVial").value), bac:parseFloat($("#fBac").value) }; }
+  function doseString(d, calc){
+    if(!d.amt && d.amt!==0) return "";
+    let s = `${+d.amt} ${d.unit}`;
+    if(calc && (d.unit==="mg"||d.unit==="mcg"||d.unit==="units")) s += ` · draw ${calc.units.toFixed(1)} u`;
+    return s;
+  }
+  function renderDose(){
+    const type=$("#fType").querySelector(".sel").dataset.v, isPep=type==="peptide";
+    $("#fRouteWrap").style.display = isPep ? "" : "none";
+    const d=curDose(), needsRecon=isPep && (d.unit==="mg"||d.unit==="mcg");
+    $("#fRecon").style.display = needsRecon ? "" : "none";
+    const calc=isPep ? drawCalc(d.amt,d.unit,d.vial,d.bac) : null;
+    let html="";
+    if(calc){
+      html+=`<div style="color:var(--accent);font-weight:700;font-size:16px">Draw ${calc.units.toFixed(1)} u`;
+      if(calc.ml!=null) html+=` <span style="color:var(--muted);font-weight:400;font-size:12px">= ${calc.ml.toFixed(3)} ml</span>`;
+      html+=`</div>`;
+      if(calc.mgPerMl!=null) html+=`<div style="color:var(--muted);font-size:12px">Concentration ${calc.mgPerMl.toFixed(2)} mg/ml</div>`;
+    } else if(d.amt && needsRecon){
+      html+=`<div style="color:var(--muted)">Enter vial mg + BAC ml to calculate units to draw.</div>`;
+    }
+    const ref=refFor($("#fName").value);
+    if(ref && d.amt && needsRecon){
+      let dv=d.amt; if(d.unit!==ref.unit){ if(d.unit==="mcg"&&ref.unit==="mg")dv=d.amt/1000; else if(d.unit==="mg"&&ref.unit==="mcg")dv=d.amt*1000; }
+      let status,col;
+      if(dv<ref.lo){status="below reference";col="var(--amber)";}
+      else if(dv>ref.hi){status="above reference";col="var(--red)";}
+      else {status="within reference";col="var(--green)";}
+      html+=`<div style="margin-top:6px;font-size:12px"><span style="color:var(--muted)">Ref: ${ref.lo}–${ref.hi} ${ref.unit} · ${ref.freq}</span> · <b style="color:${col}">${status}</b></div>`;
+    } else if(ref){
+      html+=`<div style="margin-top:6px;font-size:12px;color:var(--muted)">Ref: ${ref.lo}–${ref.hi} ${ref.unit} · ${ref.freq}</div>`;
+    }
+    $("#fDoseOut").innerHTML=html;
+    if(d.amt){ $("#fDose").value=doseString(d,calc); $("#fDoseManual").textContent=""; }
+    else { const cur=$("#fDose").value; $("#fDoseManual").textContent = cur ? ("Current: "+cur+" — enter an amount above to replace.") : ""; }
+  }
 
-  seg("#fType", v=>{}); seg("#fSchedType", v=>{ work.type=v; renderSched(); });
+  renderSched(); renderInv(); renderDose();
+
+  seg("#fType", v=>{ renderDose(); });
+  seg("#fRoute", v=>{});
+  seg("#fSchedType", v=>{ work.type=v; renderSched(); });
   seg("#fInject", v=>{ work.inject = v==="1"; });
+  ["fAmt","fVial","fBac"].forEach(idn=>$("#"+idn).oninput=renderDose);
+  $("#fUnit").onchange=renderDose;
+  $("#fName").addEventListener("input", renderDose);
   $("#fTrack").querySelectorAll("button").forEach(b=>b.onclick=()=>{
     $("#fTrack").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
     b.classList.add("sel"); work.track=b.dataset.v==="1"; renderInv();
@@ -807,7 +900,13 @@ function openEditor(id, prefill){
     if(work.type==="cycle"){schedule.daysOn=+work.daysOn||1;schedule.daysOff=+work.daysOff||0;schedule.startDate=work.startDate;}
     if(work.type==="weekly")schedule.days=work.days.slice().sort();
     const rec = id ? state.items.find(i=>i.id===id) : {id:uid(),color:it.color};
-    rec.name=name; rec.type=type; rec.dose=$("#fDose").value.trim(); rec.mfr=$("#fMfr").value.trim();
+    const d=curDose(), calc=drawCalc(d.amt,d.unit,d.vial,d.bac);
+    rec.name=name; rec.type=type; rec.mfr=$("#fMfr").value.trim();
+    rec.route = ($("#fRoute").querySelector(".sel")||{}).dataset?.v || "SubQ";
+    if(d.amt){ rec.doseAmt=d.amt; rec.doseUnit=d.unit;
+      rec.vialMg=isNaN(d.vial)?undefined:d.vial; rec.bacMl=isNaN(d.bac)?undefined:d.bac;
+      rec.dose=doseString(d,calc); }
+    else { rec.dose=$("#fDose").value.trim(); rec.doseAmt=undefined; }
     rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track; rec.inject=work.inject;
     if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
       rec.capacity=Math.max(rec.capacity||0, rec.dosesLeft); }
