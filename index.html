@@ -236,6 +236,22 @@
   .ob-list .li .ck{width:26px;height:26px;border-radius:50%;background:var(--osoft);color:var(--oacc);
     display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto;margin-top:1px}
   .ob-list .li p{margin:0;font-size:15px;line-height:1.35}
+  /* onboarding mock cards (dark, for contrast on the cream page) */
+  .ob-mock{background:#16181c;border-radius:18px;padding:16px;color:#fff;margin-bottom:6px}
+  .ob-mhead{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid #2a2d33}
+  .ob-mhead b{font-size:16px}.ob-mhead span{font-size:13px;color:#9aa0a6}
+  .ob-msec{font-size:11px;letter-spacing:.08em;color:#9aa0a6;margin:12px 0 8px;font-weight:700}
+  .ob-mrow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .ob-mrow .nm{font-weight:700;font-size:15px}
+  .ob-mrow .ds{font-size:13px;color:#9aa0a6}
+  .ob-mrow .tm{margin-left:auto;font-size:13px;color:#9aa0a6}
+  .ob-mrow .chk{width:26px;height:26px;border-radius:50%;background:var(--oacc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+  .ob-mtop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+  .ob-mtitle{font-size:18px;font-weight:800}
+  .ob-msub{font-size:13px;color:#9aa0a6}
+  .ob-mbig{font-size:26px;font-weight:800;color:var(--accent-dim)}
+  .ob-mpill{background:rgba(41,128,185,.25);color:#A9CCE3;border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;white-space:nowrap}
+  .ob-mx{display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1221,7 +1237,7 @@ $("#dscAccept").onclick=()=>{
 function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
 
 /* ---------- onboarding (bright, multi-step) ---------- */
-const OB_STEPS = ["welcome","goal","dosing","progress","reminders","privacy","name","metrics","source","features","setup","ready"];
+const OB_STEPS = ["welcome","goal","achieve","challenges","statement","dosing","system","progress","reminders","privacy","makeyours","name","metrics","source","features","setup","ready"];
 let obIdx = 0;
 const prof = state.profile = state.profile || {};
 function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
@@ -1260,22 +1276,68 @@ function renderOb(){
         <span><b>${o[1]}</b><p>${o[2]}</p></span><span class="ob-radio">✓</span></button>`).join("")}`;
     footHtml=obFoot("Continue", !!prof.goal);
   }
+  else if(step==="achieve"){
+    const opts=["Lose weight","Build muscle","Body recomposition","More energy","Better sleep","Recover faster","Sharper focus","Longevity & anti-aging","Healthier hair, skin & joints"];
+    prof.achieve=prof.achieve||[];
+    html=`<h2>What are you hoping to achieve?</h2><p class="sub">Pick everything that fits.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.achieve.includes(o)?'sel':''}" data-multi="achieve" data-val="${esc(o)}"><span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="challenges"){
+    const opts=["Remembering doses on time","Managing multiple compounds","Knowing what's working","Tracking my labs and metrics","Reconstitution math","Seeing real progress","Staying motivated through it"];
+    prof.challenges=prof.challenges||[];
+    html=`<h2>What have been the biggest challenges?</h2><p class="sub">We'll show how Stack makes each one easier.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.challenges.includes(o)?'sel':''}" data-multi="challenges" data-val="${esc(o)}"><span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="statement"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand" style="margin-bottom:28px">Stack</div>
+      <h2 style="font-size:28px">Stack tracks your doses, check-ins, and progress together — so you can see what's actually working.</h2>`;
+    footHtml=obFoot("Continue");
+  }
   else if(step==="dosing"){
-    html=`<h2>Stay on track with your dosing</h2><p class="sub">Daily, every X days, twice a week, or on/off cycles — set it once and Stack handles the schedule.</p>
-      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-        <div><b>Your Today checklist</b><p>Each day shows exactly what's due, grouped by AM / Midday / PM.</p></div></div>
-      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-        <div><b>Flexible schedules</b><p>Weekly days, on/off cycles, or every-N-days — all supported.</p></div></div>
-      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/></svg></div>
-        <div><b>Inventory &amp; draws</b><p>Track doses left and auto-calc units to draw from your vials.</p></div></div>`;
+    html=`<h2>We'll keep you on track with your dosing</h2><p class="sub">Daily, every X days, twice a week, on/off cycles. Set it once and Stack handles the rest.</p>
+      <div class="ob-mock">
+        <div class="ob-mhead"><b>Today</b><span>Mon, May 5</span></div>
+        <div class="ob-msec">MORNING</div>
+        <div class="ob-mrow"><span class="nm">Tirzepatide</span><span class="ds">5 mg</span><span class="tm">8:00 AM</span><span class="chk">✓</span></div>
+        <div class="ob-mrow"><span class="nm">BPC-157</span><span class="ds">250 mcg</span><span class="tm">8:00 AM</span><span class="chk">✓</span></div>
+        <div class="ob-msec">EVENING</div>
+        <div class="ob-mrow"><span class="nm">Testosterone</span><span class="ds">100 mg</span><span class="tm">9:00 PM</span><span class="chk">✓</span></div>
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="system"){
+    html=`<h2>We'll show you what's in your system</h2><p class="sub">Estimated levels based on your dose, timing, and pharmacokinetics.</p>
+      <div class="ob-mock">
+        <div class="ob-mtop">
+          <div><div class="ob-mtitle">Tirzepatide</div><div class="ob-msub">2.5 mg · weekly</div></div>
+          <div style="text-align:right"><div class="ob-msub">NOW</div><div class="ob-mbig">3.2 mg</div></div>
+        </div>
+        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
+          <defs><linearGradient id="pkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".45"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64 L300 140 L8 140 Z" fill="url(#pkg)"/>
+          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="ob-mx"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span></div>
+      </div>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="progress"){
-    html=`<h2>Watch your progress unfold</h2><p class="sub">Weight, mood, energy, sleep, and daily check-ins — all on one timeline.</p>
-      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
-        <div><b>Daily check-ins</b><p>Rate sleep, energy, and mood in seconds.</p></div></div>
-      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-6"/></svg></div>
-        <div><b>Trends over time</b><p>See body weight and how you feel move with your protocol.</p></div></div>`;
+    html=`<h2>We'll watch your progress unfold</h2><p class="sub">Weight, body comp, labs, and daily check-ins — all on one timeline.</p>
+      <div class="ob-mock">
+        <div class="ob-mtop">
+          <div><div class="ob-msub">BODY WEIGHT</div><div class="ob-mbig" style="color:#fff">178.4 <span style="font-size:14px;color:#9aa0a6;font-weight:600">lbs</span></div></div>
+          <div style="text-align:right"><span class="ob-mpill">−18.6 lbs</span><div class="ob-msub" style="margin-top:6px">12 weeks</div></div>
+        </div>
+        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
+          <defs><linearGradient id="wgo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".4"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130 L310 140 L10 140 Z" fill="url(#wgo)"/>
+          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="ob-mx"><span>Week 1</span><span>Week 6</span><span>Week 12</span></div>
+      </div>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="privacy"){
@@ -1286,6 +1348,11 @@ function renderOb(){
         <div><b>Never sold</b><p>Your data is never sold or shared. Ever.</p></div></div>
       <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
         <div><b>Delete anytime</b><p>Clear everything from your device in one tap.</p></div></div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="makeyours"){
+    body.className="ob-body center";
+    html=`<h2 style="font-size:34px">Now let's make this yours</h2>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="name"){
@@ -1367,6 +1434,13 @@ function renderOb(){
   if(step==="source"){
     body.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ prof.source=b.dataset.src; renderOb(); });
   }
+  body.querySelectorAll("[data-multi]").forEach(b=>b.onclick=()=>{
+    const key=b.dataset.multi, val=b.dataset.val;
+    prof[key]=prof[key]||[];
+    const i=prof[key].indexOf(val);
+    if(i>=0) prof[key].splice(i,1); else prof[key].push(val);
+    b.classList.toggle("sel");
+  });
   if(step==="metrics") renderMetricFields();
   const cont=$("#obCont"); if(cont) cont.onclick=()=>{
     if(step==="name"){ prof.name=$("#obName").value.trim(); }
