@@ -740,13 +740,11 @@ function renderToday(){
 
 function renderProtocol(){
   const list=$("#protoList");
-  const importBtn = state.starterV !== STARTER_V
-    ? `<button class="btn" id="importStarter" style="margin-bottom:14px">↓ Import my protocol (${STARTER.length} items)</button>` : "";
   if(state.items.length===0){
-    list.innerHTML = importBtn + emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
-    wireImport(list); return;
+    list.innerHTML = emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
+    return;
   }
-  list.innerHTML = importBtn + state.items.map(it=>{
+  list.innerHTML = state.items.map(it=>{
     const sch = scheduleLabel(it.schedule);
     return `<div class="card"><div class="card-head">
       <div class="swatch" style="background:${it.color};height:42px"></div>
@@ -760,7 +758,6 @@ function renderProtocol(){
       <button class="mini-btn" data-del="${it.id}" style="color:var(--red)">Remove</button>
     </div></div>`;
   }).join("");
-  wireImport(list);
   list.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
   list.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
     const it=state.items.find(i=>i.id===el.dataset.del);
@@ -769,18 +766,6 @@ function renderProtocol(){
     }
   });
 }
-function importStarter(){
-  // refresh cleanly: drop any existing items that match a starter name, then add
-  const names=new Set(STARTER.map(s=>s.name));
-  state.items=state.items.filter(i=>!names.has(i.name));
-  STARTER.forEach(s=>state.items.push({id:uid(), ...s}));
-  state.starterV=STARTER_V; save();
-}
-function wireImport(list){
-  const btn=list.querySelector("#importStarter"); if(!btn) return;
-  btn.onclick=()=>{ importStarter(); render(); };
-}
-
 function renderInventory(){
   const list=$("#invList");
   const tracked = state.items.filter(i=>i.trackInv);
@@ -1352,10 +1337,9 @@ function renderOb(){
   else if(step==="setup"){
     body.className="ob-body center";
     html=`<div class="ob-brand" style="margin-bottom:14px">Stack</div>
-      <h2>Set up your protocol</h2>
-      <p class="sub">Load your protocol now, or add compounds yourself from the Protocol tab anytime.</p>`;
-    footHtml=`<button class="ob-btn" id="obImport">Import my protocol (${STARTER.length} items)</button>
-      <button class="ob-btn soft" id="obLater">I'll set this up later</button>`;
+      <h2>Build your stack</h2>
+      <p class="sub">Add your compounds anytime from the Protocol tab — tap the <b>+</b> to add a peptide or supplement, or pull from the Library.</p>`;
+    footHtml=`<button class="ob-btn" id="obLater">Continue</button>`;
   }
   else if(step==="ready"){
     body.className="ob-body center";
@@ -1390,7 +1374,6 @@ function renderOb(){
     try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
     obNext();
   };
-  const imp=$("#obImport"); if(imp) imp.onclick=()=>{ importStarter(); obNext(); };
   const later=$("#obLater"); if(later) later.onclick=obNext;
   if(step==="ready"){
     const rows=[...body.querySelectorAll(".ob-rdy")];
