@@ -1241,12 +1241,12 @@ function renderOb(){
   }
   else if(step==="goal"){
     const opts=[
-      ["peptides","I'm on peptides or other compounds","BPC-157, GHK-Cu, TB-500, etc."],
+      ["peptides","I'm on peptides or other compounds","MOTS-c, Tesamorelin, NAD+"],
       ["glp1","I'm on a GLP-1","Retatrutide, Tirzepatide, Semaglutide"],
       ["trt","I'm on TRT or similar","Testosterone, performance protocols"],
       ["stack","I manage a full stack","Multiple compounds together"],
     ];
-    html=`<h2>What brings you here?</h2><p class="sub">We'll tailor Stack around you.</p>
+    html=`<h2>What's in your stack?</h2><p class="sub">We'll tailor Stack around you.</p>
       ${opts.map(o=>`<button class="ob-opt ${prof.goal===o[0]?'sel':''}" data-goal="${o[0]}">
         <span><b>${o[1]}</b><p>${o[2]}</p></span><span class="ob-radio">✓</span></button>`).join("")}`;
     footHtml=obFoot("Continue", !!prof.goal);
