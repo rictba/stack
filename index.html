@@ -314,14 +314,20 @@
     <div id="protoList"></div>
     <div class="group-label">Reconstitution calculator</div>
     <div class="card" style="padding:16px">
+      <div class="seg" id="rcMode" style="margin-bottom:12px">
+        <button data-v="inject" class="sel">Injection</button>
+        <button data-v="nasal">Nasal spray</button>
+      </div>
       <div class="row2">
         <div class="field" style="margin-bottom:10px"><label>Vial size (mg)</label>
           <input id="rcVial" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 10"></div>
         <div class="field" style="margin-bottom:10px"><label>BAC water (ml)</label>
           <input id="rcBac" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 3"></div>
       </div>
-      <div class="field" style="margin-bottom:10px"><label>Desired dose (mcg)</label>
+      <div class="field" id="rcInjField" style="margin-bottom:10px"><label>Desired dose (mcg)</label>
         <input id="rcDose" type="number" inputmode="decimal" step="1" placeholder="e.g. 200"></div>
+      <div class="field hidden" id="rcNasalField" style="margin-bottom:10px"><label>Spray volume (ml per spray)</label>
+        <input id="rcSpray" type="number" inputmode="decimal" step="0.01" placeholder="0.1" value="0.1"></div>
       <button class="btn" id="rcCalc">Calculate</button>
       <div id="rcResult" class="hidden" style="margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px">
         <div class="fs-11" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Result</div>
@@ -1179,14 +1185,25 @@ function openLibEditor(id){
   $("#lfCancel").onclick=closeSheet;
   $("#scrim").classList.add("open");
 }
+let rcMode = "inject";
 function calcRecon(){
-  const vial=parseFloat($("#rcVial").value), bac=parseFloat($("#rcBac").value), dose=parseFloat($("#rcDose").value);
-  if(!vial||!bac||!dose){ alert("Fill in all three fields."); return; }
+  const vial=parseFloat($("#rcVial").value), bac=parseFloat($("#rcBac").value);
+  if(!vial||!bac){ alert("Enter the vial size and BAC water."); return; }
   const concMgMl=vial/bac, concMcgMl=concMgMl*1000;
-  const mlNeeded=dose/concMcgMl, unitsNeeded=mlNeeded*100;
-  $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
-  $("#rcUnits").textContent=`${unitsNeeded.toFixed(1)} units`;
-  $("#rcMl").textContent=`= ${mlNeeded.toFixed(3)} ml on a 1cc (100-unit) syringe`;
+  if(rcMode==="nasal"){
+    const sprayMl=parseFloat($("#rcSpray").value)||0.1;
+    const mcgPerSpray=concMcgMl*sprayMl, sprays=bac/sprayMl;
+    $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
+    $("#rcUnits").textContent=`${Math.round(mcgPerSpray)} mcg / spray`;
+    $("#rcMl").textContent=`≈ ${Math.floor(sprays)} sprays per vial · ${sprayMl} ml/spray`;
+  } else {
+    const dose=parseFloat($("#rcDose").value);
+    if(!dose){ alert("Enter the desired dose."); return; }
+    const mlNeeded=dose/concMcgMl, unitsNeeded=mlNeeded*100;
+    $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
+    $("#rcUnits").textContent=`${unitsNeeded.toFixed(1)} units`;
+    $("#rcMl").textContent=`= ${mlNeeded.toFixed(3)} ml on a 1cc (100-unit) syringe`;
+  }
   $("#rcResult").classList.remove("hidden");
 }
 
@@ -1212,6 +1229,11 @@ $("#prevDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()-1); render(); };
 $("#nextDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()+1); render(); };
 $("#todayBtn").onclick=()=>{ viewDate=new Date(); viewDate.setHours(0,0,0,0); render(); };
 $("#rcCalc").onclick=calcRecon;
+seg("#rcMode", v=>{ rcMode=v;
+  $("#rcInjField").classList.toggle("hidden", v!=="inject");
+  $("#rcNasalField").classList.toggle("hidden", v!=="nasal");
+  $("#rcResult").classList.add("hidden");
+});
 $("#replayIntro").onclick=startOnboarding;
 seg("#libTabs", v=>{ libKind=v; renderLibrary(); });
 // mood / sleep / energy ratings — tap to set (tap again to clear), auto-saved
