@@ -265,6 +265,7 @@
         <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit">lb / kg</span>
       </div>
     </div>
+    <div id="weightChart"></div>
     <div class="group-label">Protocol</div>
     <div class="progress-card">
       <div class="progress-top"><b>Daily progress</b><span id="progTxt">0 / 0</span></div>
@@ -641,6 +642,7 @@ function renderToday(){
   $("#jHours").value = j.hours ?? "";
   $("#jWeight").value = j.weight ?? "";
   $("#jNote").value = j.note ?? "";
+  $("#weightChart").innerHTML = buildWeightChart();
 
   // ---- protocol checklist ----
   const list = $("#todayList");
@@ -775,6 +777,64 @@ function restock(id){
   it.dosesLeft=(it.dosesLeft||0)+n;
   if((it.capacity||0) < it.dosesLeft) it.capacity=it.dosesLeft;
   save(); render();
+}
+
+/* ---------- weight progress chart ---------- */
+function buildWeightChart(){
+  const pts = Object.keys(state.journal)
+    .filter(k=>state.journal[k].weight!=null)
+    .sort()
+    .map(k=>({ d:new Date(k+"T00:00:00"), w:+state.journal[k].weight }));
+  const unit = (state.profile && state.profile.units==="metric") ? "kg" : "lb";
+  const goal = state.profile && state.profile.goalWeight!=null ? +state.profile.goalWeight : null;
+  if(pts.length===0){
+    return `<div class="group-label">Body weight</div>
+      <div class="card" style="padding:20px;text-align:center;color:var(--muted);font-size:14px">
+        Log your morning weight to start your trend.</div>`;
+  }
+  const cur = pts[pts.length-1].w, first = pts[0].w;
+  const change = +(cur-first).toFixed(1);
+  const chgCol = change<0 ? "var(--green)" : (change>0 ? "var(--amber)" : "var(--muted)");
+  const days = Math.max(0, Math.round((pts[pts.length-1].d - pts[0].d)/86400000));
+  const wks = (days/7);
+  const period = pts.length<2 ? `${pts.length} entry` : (wks>=1 ? `${wks.toFixed(wks<10?1:0)} wk` : `${days} days`);
+
+  let chart="";
+  if(pts.length>=2){
+    const W=320,H=150,p=18, n=pts.length;
+    let lo=Math.min(...pts.map(o=>o.w)), hi=Math.max(...pts.map(o=>o.w));
+    if(goal!=null){ lo=Math.min(lo,goal); hi=Math.max(hi,goal); }
+    if(hi===lo){ hi+=1; lo-=1; }
+    const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+    const x=i=> p + (i/(n-1))*(W-2*p);
+    const y=w=> H-p - ((w-lo)/(hi-lo))*(H-2*p);
+    const line = pts.map((o,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(o.w).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(n-1).toFixed(1)} ${H-p} L${x(0).toFixed(1)} ${H-p} Z`;
+    const goalLine = (goal!=null && goal>=lo && goal<=hi)
+      ? `<line x1="${p}" y1="${y(goal).toFixed(1)}" x2="${W-p}" y2="${y(goal).toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>
+         <text x="${W-p}" y="${(y(goal)-5).toFixed(1)}" text-anchor="end" fill="var(--muted)" font-size="9">goal ${goal}</text>` : "";
+    const dots = pts.map((o,i)=> (i===0||i===n-1) ? `<circle cx="${x(i).toFixed(1)}" cy="${y(o.w).toFixed(1)}" r="3.5" fill="var(--accent)"/>` : "").join("");
+    chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block;margin-top:6px;height:150px">
+        <defs><linearGradient id="wgrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/>
+          <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+        ${goalLine}
+        <path d="${area}" fill="url(#wgrad)"/>
+        <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+      </svg>`;
+  }
+  const toGo = goal!=null ? ` · ${Math.abs(+(cur-goal).toFixed(1))} ${unit} to goal` : "";
+  return `<div class="group-label">Body weight</div>
+    <div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:28px;font-weight:800;letter-spacing:-.5px">${cur}<span style="font-size:14px;color:var(--muted);font-weight:600"> ${unit}</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${period}${pts.length>=2?` · ${pts.length} check-ins`:""}</div></div>
+        ${pts.length>=2?`<div style="background:var(--surface2);border:1px solid var(--line);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;color:${chgCol}">${change>0?"+":""}${change} ${unit}</div>`:""}
+      </div>
+      ${chart}
+      ${goal!=null?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Goal ${goal} ${unit}${toGo}</div>`:""}
+    </div>`;
 }
 
 // daily metrics auto-save into state.journal[date]
@@ -1124,7 +1184,7 @@ document.querySelectorAll(".rate-btns").forEach(row=>{
 });
 // numeric + note fields — auto-save on input (no re-render, keeps focus)
 $("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
-$("#jWeight").oninput=e=>setMetric("weight", e.target.value?parseFloat(e.target.value):null);
+$("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.target.value):null); $("#weightChart").innerHTML=buildWeightChart(); };
 $("#jNote").oninput=e=>setMetric("note", e.target.value);
 
 // first-launch disclaimer
