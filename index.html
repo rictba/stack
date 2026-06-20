@@ -219,6 +219,23 @@
   .ob-btn:disabled{opacity:.4}
   .ob-skip{display:block;width:100%;text-align:center;color:var(--omut);font-weight:600;padding:16px;font-size:15px}
   .ob-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .ob-btn.acc{background:var(--oacc)}
+  .ob-pill{display:inline-block;align-self:center;background:var(--osoft);color:var(--oacc);border-radius:99px;
+    padding:7px 16px;font-weight:700;font-size:14px;margin-bottom:22px}
+  .ob-notif{display:flex;gap:12px;align-items:center;background:#efece4;border-radius:16px;padding:14px 16px}
+  .ob-notif .nic{width:44px;height:44px;border-radius:12px;background:var(--oacc);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+  .ob-notif b{font-size:15px}.ob-notif p{margin:2px 0 0;font-size:13px;color:var(--omut)}
+  .ob-rdy{display:flex;align-items:center;gap:12px;margin-bottom:15px;opacity:.3;transition:opacity .35s}
+  .ob-rdy.on{opacity:1}
+  .ob-rdy .ck{width:30px;height:30px;border-radius:50%;background:var(--oacc);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:15px;flex:0 0 auto}
+  .ob-rdy span{font-size:16px;font-weight:600}
+  .ob-list b{display:block;font-size:16px;margin:0 0 2px}
+  .ob-list .li{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+  .ob-list .li .ck{width:26px;height:26px;border-radius:50%;background:var(--osoft);color:var(--oacc);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto;margin-top:1px}
+  .ob-list .li p{margin:0;font-size:15px;line-height:1.35}
 </style>
 </head>
 <body>
@@ -1195,7 +1212,7 @@ $("#dscAccept").onclick=()=>{
 function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
 
 /* ---------- onboarding (bright, multi-step) ---------- */
-const OB_STEPS = ["welcome","goal","dosing","progress","privacy","name","metrics","finish"];
+const OB_STEPS = ["welcome","goal","dosing","progress","reminders","privacy","name","metrics","source","features","setup","ready"];
 let obIdx = 0;
 const prof = state.profile = state.profile || {};
 function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
@@ -1279,13 +1296,54 @@ function renderOb(){
       <div class="ob-note" id="obToGo"></div>`;
     footHtml=obFoot("Continue", true, true);
   }
-  else if(step==="finish"){
+  else if(step==="reminders"){
+    html=`<h2>Stay on top of your schedule</h2><p class="sub">We'll nudge you when a dose is due. Customize the timing or turn it off anytime.</p>
+      <div class="ob-notif"><div class="nic">🔔</div>
+        <div><b>Stack</b><p>Time for Retatrutide · ~0.3 mg</p></div></div>`;
+    footHtml=`<button class="ob-btn acc" id="obRemOn">🔔  Enable reminders</button>
+      <button class="ob-skip" id="obSkip">Maybe later</button>`;
+  }
+  else if(step==="source"){
+    const opts=["App Store / Play Store","Google","AI (ChatGPT, etc.)","Instagram","TikTok","Reddit","Friend or family"];
+    html=`<h2>How'd you find us?</h2><p class="sub">Optional — helps us understand what's working.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.source===o?'sel':''}" data-src="${esc(o)}">
+        <span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", !!prof.source, true);
+  }
+  else if(step==="features"){
+    const feats=[
+      ["Track unlimited compounds","Peptides &amp; supplements, no limit"],
+      ["Daily check-ins","Mood, energy, sleep, weight & notes"],
+      ["Progress trends","Body-weight chart with your goal line"],
+      ["Reconstitution & draws","Auto units-to-draw from your vials"],
+      ["Inventory tracking","Doses left + low-stock warnings"],
+      ["Reference library","Peptide & supplement info, your way"],
+    ];
+    html=`<h2>Everything Stack does</h2><p class="sub">All on your device — free, no accounts.</p>
+      <div class="ob-card ob-list">
+        ${feats.map(f=>`<div class="li"><span class="ck">✓</span><div><b>${f[0]}</b><p style="color:var(--omut)">${f[1]}</p></div></div>`).join("")}
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="setup"){
     body.className="ob-body center";
-    html=`<div class="ob-brand" style="margin-bottom:18px">Stack<span class="dot">.</span></div>
-      <h2>${prof.name?prof.name+", you're all set":"You're all set"}</h2>
+    html=`<div class="ob-brand" style="margin-bottom:14px">Stack<span class="dot">.</span></div>
+      <h2>Set up your protocol</h2>
       <p class="sub">Load your protocol now, or add compounds yourself from the Protocol tab anytime.</p>`;
     footHtml=`<button class="ob-btn" id="obImport">Import my protocol (${STARTER.length} items)</button>
       <button class="ob-btn soft" id="obLater">I'll set this up later</button>`;
+  }
+  else if(step==="ready"){
+    body.className="ob-body center";
+    const item = state.items[0];
+    html=`<h2>${prof.name?"You're ready, "+esc(prof.name):"You're ready"}</h2>
+      <p class="sub">Your protocol is calibrated and waiting.</p>
+      ${item?`<div class="ob-pill"><span style="opacity:.6">●</span> ${esc(item.name)}${item.dose?" · "+esc(item.dose.split("·")[0].trim()):""}</div>`:""}
+      <div style="text-align:left;max-width:300px;margin:6px auto 0">
+        ${["Generating your reminders","Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
+          .map((t,i)=>`<div class="ob-rdy" data-rdy="${i}"><span class="ck">✓</span><span>${t}</span></div>`).join("")}
+      </div>`;
+    footHtml=`<button class="ob-btn" id="obEnter" disabled>Enter Stack</button>`;
   }
 
   body.innerHTML=html; foot.innerHTML=footHtml;
@@ -1294,14 +1352,29 @@ function renderOb(){
   if(step==="goal"){
     body.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{ prof.goal=b.dataset.goal; renderOb(); });
   }
+  if(step==="source"){
+    body.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ prof.source=b.dataset.src; renderOb(); });
+  }
   if(step==="metrics") renderMetricFields();
   const cont=$("#obCont"); if(cont) cont.onclick=()=>{
     if(step==="name"){ prof.name=$("#obName").value.trim(); }
     obNext();
   };
   const skip=$("#obSkip"); if(skip) skip.onclick=obNext;
-  const imp=$("#obImport"); if(imp) imp.onclick=()=>{ importStarter(); finishOb(); };
-  const later=$("#obLater"); if(later) later.onclick=finishOb;
+  const remOn=$("#obRemOn"); if(remOn) remOn.onclick=()=>{
+    prof.reminders=true;
+    try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+    obNext();
+  };
+  const imp=$("#obImport"); if(imp) imp.onclick=()=>{ importStarter(); obNext(); };
+  const later=$("#obLater"); if(later) later.onclick=obNext;
+  if(step==="ready"){
+    const rows=[...body.querySelectorAll(".ob-rdy")];
+    rows.forEach((r,i)=>setTimeout(()=>r.classList.add("on"), 250+i*320));
+    const enter=$("#obEnter");
+    setTimeout(()=>{ if(enter){ enter.disabled=false; } }, 250+rows.length*320+200);
+    if(enter) enter.onclick=finishOb;
+  }
 }
 function renderMetricFields(){
   const u=prof.units||"imperial", wrap=$("#obMetricFields"); if(!wrap) return;
