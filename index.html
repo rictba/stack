@@ -1283,7 +1283,7 @@ function renderOb(){
     body.className="ob-body center";
     html=`<div class="ob-brand" style="font-size:48px;letter-spacing:-1.5px;margin-bottom:26px">Stack</div>
       <h2>Track what you take — and what actually works</h2>
-      <p class="sub">Stack keeps your doses, check-ins, and progress in one place, so you can see what's moving the needle.</p>`;
+      <p class="sub">Stack keeps your doses, assessments, and progress in one place, so you can see what's moving the needle.</p>`;
     footHtml=obFoot("Get started");
   }
   else if(step==="goal"){
@@ -1315,7 +1315,7 @@ function renderOb(){
   else if(step==="statement"){
     body.className="ob-body center";
     html=`<div class="ob-brand" style="margin-bottom:28px">Stack</div>
-      <h2 style="font-size:28px">Doses, check-ins, and results in one place — so you can finally tell what's making the difference.</h2>`;
+      <h2 style="font-size:28px">Doses, assessments, and results in one place — so you can finally tell what's making the difference.</h2>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="dosing"){
@@ -1347,7 +1347,7 @@ function renderOb(){
     footHtml=obFoot("Continue");
   }
   else if(step==="progress"){
-    html=`<h2>We'll watch your progress unfold</h2><p class="sub">Weight, body comp, labs, and daily check-ins — all on one timeline.</p>
+    html=`<h2>We'll watch your progress unfold</h2><p class="sub">Weight, body comp, labs, and daily assessments — all on one timeline.</p>
       <div class="ob-mock">
         <div class="ob-mtop">
           <div><div class="ob-msub">BODY WEIGHT</div><div class="ob-mbig" style="color:#fff">178.4 <span style="font-size:14px;color:#9aa0a6;font-weight:600">lbs</span></div></div>
@@ -1413,7 +1413,7 @@ function renderOb(){
   else if(step==="features"){
     const feats=[
       ["Track unlimited compounds","Peptides &amp; supplements, no limit"],
-      ["Daily check-ins","Mood, energy, sleep, weight & notes"],
+      ["Daily assessments","Mood, energy, sleep, weight & notes"],
       ["Progress trends","Body-weight chart with your goal line"],
       ["Reconstitution & draws","Auto units-to-draw from your vials"],
       ["Inventory tracking","Doses left + low-stock warnings"],
