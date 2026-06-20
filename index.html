@@ -1344,12 +1344,14 @@ function renderOb(){
   else if(step==="ready"){
     body.className="ob-body center";
     const item = state.items[0];
+    const steps = item
+      ? ["Generating your reminders","Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
+      : ["Setting up your space","Personalizing your dashboard","Getting things ready"];
     html=`<h2>${prof.name?"You're ready, "+esc(prof.name):"You're ready"}</h2>
-      <p class="sub">Your protocol is calibrated and waiting.</p>
+      <p class="sub">${item?"Your protocol is calibrated and waiting.":"Add your first compound from the Protocol tab whenever you're ready."}</p>
       ${item?`<div class="ob-pill"><span style="opacity:.6">●</span> ${esc(item.name)}${item.dose?" · "+esc(item.dose.split("·")[0].trim()):""}</div>`:""}
       <div style="text-align:left;max-width:300px;margin:6px auto 0">
-        ${["Generating your reminders","Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
-          .map((t,i)=>`<div class="ob-rdy" data-rdy="${i}"><span class="ck">✓</span><span>${t}</span></div>`).join("")}
+        ${steps.map((t,i)=>`<div class="ob-rdy" data-rdy="${i}"><span class="ck">✓</span><span>${t}</span></div>`).join("")}
       </div>`;
     footHtml=`<button class="ob-btn" id="obEnter" disabled>Enter Stack</button>`;
   }
