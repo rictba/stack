@@ -172,6 +172,53 @@
   .dsc-check{display:flex;align-items:center;gap:10px;justify-content:flex-start;
     padding:14px 4px 4px;font-size:15px;color:var(--text);cursor:pointer}
   .dsc-check input{width:20px;height:20px;accent-color:var(--accent)}
+
+  /* onboarding (bright theme) */
+  .ob{--obg:#F6F4EE;--otx:#1b1b19;--omut:#73706a;--oln:#e4e1d8;--oacc:#c5806b;
+    --osoft:#f8e8e1;--ocard:#fff;--odark:#141414;
+    position:fixed;inset:0;z-index:70;background:var(--obg);color:var(--otx);display:none;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 14px) 22px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .ob.open{display:flex}
+  .ob-top{display:flex;align-items:center;gap:14px;margin-bottom:30px;flex:0 0 auto}
+  .ob-back{font-size:24px;color:var(--otx);width:24px;line-height:1}
+  .ob-bar{flex:1;height:4px;background:#e4e1d8;border-radius:99px;overflow:hidden}
+  .ob-bar i{display:block;height:100%;background:var(--odark);border-radius:99px;transition:width .3s ease}
+  .ob-body{flex:1;display:flex;flex-direction:column}
+  .ob-body.center{justify-content:center;text-align:center}
+  .ob h2{font-size:32px;font-weight:800;letter-spacing:-1px;margin:0 0 10px;line-height:1.08}
+  .ob .sub{color:var(--omut);font-size:16px;margin:0 0 26px;line-height:1.45}
+  .ob-brand{display:flex;align-items:center;justify-content:center;gap:8px;font-size:26px;font-weight:800;margin-bottom:30px}
+  .ob-brand .dot{color:var(--oacc)}
+  .ob-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ocard);
+    border:1.5px solid var(--oln);border-radius:16px;padding:18px;margin-bottom:13px;text-align:left;width:100%;transition:.12s}
+  .ob-opt.sel{border-color:var(--oacc);background:var(--osoft)}
+  .ob-opt b{font-size:17px;display:block;color:var(--otx)}
+  .ob-opt p{margin:4px 0 0;font-size:14px;color:var(--omut)}
+  .ob-radio{width:26px;height:26px;border-radius:50%;border:2px solid var(--oln);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;color:transparent;font-size:15px}
+  .ob-opt.sel .ob-radio{background:var(--oacc);border-color:var(--oacc);color:#fff}
+  .ob-feat{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+  .ob-feat .ic{width:44px;height:44px;border-radius:12px;background:#ece9e1;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ob-feat .ic svg{width:22px;height:22px;stroke:var(--otx);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ob-feat b{font-size:17px}.ob-feat p{margin:3px 0 0;color:var(--omut);font-size:14px;line-height:1.45}
+  .ob-card{background:var(--ocard);border:1px solid var(--oln);border-radius:18px;padding:18px;margin-bottom:8px}
+  .ob-lab{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--omut);font-weight:700;margin:0 0 8px}
+  .ob-input{width:100%;background:var(--ocard);border:1.5px solid var(--oln);border-radius:14px;color:var(--otx);
+    padding:16px;font-size:18px;font-weight:600}
+  .ob-input:focus{outline:none;border-color:var(--oacc)}
+  .ob-seg{display:inline-flex;background:#eceae2;border-radius:99px;padding:4px;margin-bottom:18px}
+  .ob-seg button{padding:9px 20px;border-radius:99px;font-weight:700;font-size:15px;color:var(--omut)}
+  .ob-seg button.sel{background:#fff;color:var(--otx);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .ob-note{background:#efece4;border-radius:12px;padding:13px 15px;font-size:14px;color:var(--otx);margin-top:4px}
+  .ob-note .dotr{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--oacc);margin-right:8px}
+  .ob-foot{flex:0 0 auto;padding-top:18px}
+  .ob-btn{display:block;width:100%;padding:18px;border-radius:99px;background:var(--odark);color:#fff;
+    font-weight:700;font-size:17px}
+  .ob-btn.soft{background:#eceae2;color:var(--otx);margin-top:10px}
+  .ob-btn:disabled{opacity:.4}
+  .ob-skip{display:block;width:100%;text-align:center;color:var(--omut);font-weight:600;padding:16px;font-size:15px}
+  .ob-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 </style>
 </head>
 <body>
@@ -339,6 +386,16 @@
     <label class="dsc-check"><input type="checkbox" id="dscHide"> Don't show this again</label>
     <button class="btn" id="dscAccept" style="margin-top:14px">I Understand and Accept</button>
   </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="ob" id="onboard">
+  <div class="ob-top">
+    <button class="ob-back" id="obBack" style="visibility:hidden">‹</button>
+    <div class="ob-bar"><i id="obBar" style="width:0%"></i></div>
+  </div>
+  <div class="ob-body" id="obBody"></div>
+  <div class="ob-foot" id="obFoot"></div>
 </div>
 
 <script>
@@ -670,15 +727,16 @@ function renderProtocol(){
     }
   });
 }
+function importStarter(){
+  // refresh cleanly: drop any existing items that match a starter name, then add
+  const names=new Set(STARTER.map(s=>s.name));
+  state.items=state.items.filter(i=>!names.has(i.name));
+  STARTER.forEach(s=>state.items.push({id:uid(), ...s}));
+  state.starterV=STARTER_V; save();
+}
 function wireImport(list){
   const btn=list.querySelector("#importStarter"); if(!btn) return;
-  btn.onclick=()=>{
-    // refresh cleanly: drop any existing items that match a starter name, then add
-    const names=new Set(STARTER.map(s=>s.name));
-    state.items=state.items.filter(i=>!names.has(i.name));
-    STARTER.forEach(s=>state.items.push({id:uid(), ...s}));
-    state.starterV=STARTER_V; save(); render();
-  };
+  btn.onclick=()=>{ importStarter(); render(); };
 }
 
 function renderInventory(){
@@ -1074,9 +1132,153 @@ $("#dscAccept").onclick=()=>{
   if($("#dscHide").checked){ state.hideDisclaimer=true; save(); }
   $("#disclaimer").classList.remove("open");
 };
-if(!state.hideDisclaimer) $("#disclaimer").classList.add("open");
+function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
+
+/* ---------- onboarding (bright, multi-step) ---------- */
+const OB_STEPS = ["welcome","goal","dosing","progress","privacy","name","metrics","finish"];
+let obIdx = 0;
+const prof = state.profile = state.profile || {};
+function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
+function obNext(){ if(obIdx<OB_STEPS.length-1){ obIdx++; renderOb(); } else finishOb(); }
+function obBack(){ if(obIdx>0){ obIdx--; renderOb(); } }
+function finishOb(){ state.profile=prof; state.onboarded=true;
+  if(prof.weight && journalToday().weight==null){ journalToday().weight=prof.weight; }
+  save(); $("#onboard").classList.remove("open"); render(); maybeDisclaimer();
+}
+function obFoot(label, enabled, skip){
+  return `<button class="ob-btn" id="obCont" ${enabled===false?"disabled":""}>${label||"Continue"}</button>
+    ${skip?`<button class="ob-skip" id="obSkip">Skip</button>`:""}`;
+}
+function renderOb(){
+  $("#obBar").style.width = ((obIdx+1)/OB_STEPS.length*100)+"%";
+  $("#obBack").style.visibility = obIdx>0 ? "visible" : "hidden";
+  const step=OB_STEPS[obIdx], body=$("#obBody"), foot=$("#obFoot");
+  body.className="ob-body"; let html="", footHtml="";
+
+  if(step==="welcome"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand">Stack<span class="dot">.</span></div>
+      <h2>Track what you take — and what actually works</h2>
+      <p class="sub">Stack keeps your doses, check-ins, and progress in one place, so you can see what's moving the needle.</p>`;
+    footHtml=obFoot("Get started");
+  }
+  else if(step==="goal"){
+    const opts=[
+      ["peptides","I'm on peptides or other compounds","BPC-157, GHK-Cu, TB-500, etc."],
+      ["glp1","I'm on a GLP-1","Retatrutide, Tirzepatide, Semaglutide"],
+      ["trt","I'm on TRT or similar","Testosterone, performance protocols"],
+      ["stack","I manage a full stack","Multiple compounds together"],
+    ];
+    html=`<h2>What brings you here?</h2><p class="sub">We'll tailor Stack around you.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.goal===o[0]?'sel':''}" data-goal="${o[0]}">
+        <span><b>${o[1]}</b><p>${o[2]}</p></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", !!prof.goal);
+  }
+  else if(step==="dosing"){
+    html=`<h2>Stay on track with your dosing</h2><p class="sub">Daily, every X days, twice a week, or on/off cycles — set it once and Stack handles the schedule.</p>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div><b>Your Today checklist</b><p>Each day shows exactly what's due, grouped by AM / Midday / PM.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div><b>Flexible schedules</b><p>Weekly days, on/off cycles, or every-N-days — all supported.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/></svg></div>
+        <div><b>Inventory &amp; draws</b><p>Track doses left and auto-calc units to draw from your vials.</p></div></div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="progress"){
+    html=`<h2>Watch your progress unfold</h2><p class="sub">Weight, mood, energy, sleep, and daily check-ins — all on one timeline.</p>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div>
+        <div><b>Daily check-ins</b><p>Rate sleep, energy, and mood in seconds.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-6"/></svg></div>
+        <div><b>Trends over time</b><p>See body weight and how you feel move with your protocol.</p></div></div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="privacy"){
+    html=`<h2>Your data stays yours</h2><p class="sub">Health data is sensitive — here's how Stack handles it.</p>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div><b>On your device only</b><p>Stored locally in your browser — no accounts, no server.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg></div>
+        <div><b>Never sold</b><p>Your data is never sold or shared. Ever.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+        <div><b>Delete anytime</b><p>Clear everything from your device in one tap.</p></div></div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="name"){
+    html=`<h2>What should we call you?</h2><p class="sub">We'll use this to personalize your protocol.</p>
+      <p class="ob-lab">First name</p>
+      <input class="ob-input" id="obName" placeholder="Your name" value="${esc(prof.name||"")}">`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="metrics"){
+    const u=prof.units||"imperial";
+    html=`<h2>Personalize your metrics</h2><p class="sub">Your numbers help calibrate goal tracking.</p>
+      <div class="ob-seg" id="obUnits">
+        <button data-u="imperial" class="${u==='imperial'?'sel':''}">Imperial</button>
+        <button data-u="metric" class="${u==='metric'?'sel':''}">Metric</button>
+      </div>
+      <div id="obMetricFields"></div>
+      <div class="ob-note" id="obToGo"></div>`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="finish"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand" style="margin-bottom:18px">Stack<span class="dot">.</span></div>
+      <h2>${prof.name?prof.name+", you're all set":"You're all set"}</h2>
+      <p class="sub">Load your protocol now, or add compounds yourself from the Protocol tab anytime.</p>`;
+    footHtml=`<button class="ob-btn" id="obImport">Import my protocol (${STARTER.length} items)</button>
+      <button class="ob-btn soft" id="obLater">I'll set this up later</button>`;
+  }
+
+  body.innerHTML=html; foot.innerHTML=footHtml;
+
+  // wiring
+  if(step==="goal"){
+    body.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{ prof.goal=b.dataset.goal; renderOb(); });
+  }
+  if(step==="metrics") renderMetricFields();
+  const cont=$("#obCont"); if(cont) cont.onclick=()=>{
+    if(step==="name"){ prof.name=$("#obName").value.trim(); }
+    obNext();
+  };
+  const skip=$("#obSkip"); if(skip) skip.onclick=obNext;
+  const imp=$("#obImport"); if(imp) imp.onclick=()=>{ importStarter(); finishOb(); };
+  const later=$("#obLater"); if(later) later.onclick=finishOb;
+}
+function renderMetricFields(){
+  const u=prof.units||"imperial", wrap=$("#obMetricFields"); if(!wrap) return;
+  if(u==="imperial"){
+    wrap.innerHTML=`<div class="ob-grid2">
+        <div><p class="ob-lab">Height (ft)</p><input class="ob-input" id="mFt" type="number" inputmode="numeric" value="${prof.htFt??""}"></div>
+        <div><p class="ob-lab">Height (in)</p><input class="ob-input" id="mIn" type="number" inputmode="numeric" value="${prof.htIn??""}"></div>
+      </div>
+      <p class="ob-lab">Weight (lb)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Goal weight (lb)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}">`;
+  } else {
+    wrap.innerHTML=`<p class="ob-lab">Height (cm)</p><input class="ob-input" id="mCm" type="number" inputmode="decimal" value="${prof.htCm??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Weight (kg)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Goal weight (kg)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}">`;
+  }
+  const readM=()=>{
+    prof.units=u;
+    if(u==="imperial"){ prof.htFt=numOrNull($("#mFt")); prof.htIn=numOrNull($("#mIn")); }
+    else prof.htCm=numOrNull($("#mCm"));
+    prof.weight=numOrNull($("#mWt")); prof.goalWeight=numOrNull($("#mGoal"));
+    const unit=u==="imperial"?"lb":"kg";
+    const to=$("#obToGo");
+    if(prof.weight!=null && prof.goalWeight!=null){
+      const d=+(prof.weight-prof.goalWeight).toFixed(1);
+      to.innerHTML=`<span class="dotr"></span><b>${Math.abs(d)} ${unit} to go</b> — we'll watch this with you.`;
+      to.style.display="";
+    } else to.style.display="none";
+  };
+  wrap.querySelectorAll("input").forEach(i=>i.oninput=readM);
+  $("#obUnits").querySelectorAll("button").forEach(b=>b.onclick=()=>{ prof.units=b.dataset.u; renderOb(); });
+  readM();
+}
+function numOrNull(el){ return el&&el.value!=="" ? parseFloat(el.value) : null; }
+$("#obBack").onclick=obBack;
 
 render();
+if(!state.onboarded) startOnboarding(); else maybeDisclaimer();
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
