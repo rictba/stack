@@ -601,6 +601,15 @@ function load(){
     d.libSeedV = LIB_SEED_V;
   }
   d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
+  // integrity: guarantee unique, non-empty item ids
+  d.logs = d.logs || {};
+  const seen=new Set();
+  (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
+  // drop orphaned dose logs (keys whose item id no longer exists) — clears stale "done" marks
+  const validIds=new Set((d.items||[]).map(i=>i.id));
+  Object.keys(d.logs).forEach(day=>{
+    Object.keys(d.logs[day]).forEach(k=>{ if(!validIds.has(k.split("__")[0])) delete d.logs[day][k]; });
+  });
   return d;
 }
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
