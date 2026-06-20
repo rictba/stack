@@ -314,6 +314,7 @@
         <div id="rcMl" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
       </div>
     </div>
+    <button class="btn ghost" id="replayIntro" style="margin-top:18px">Replay intro tour</button>
   </section>
 
   <!-- INVENTORY -->
@@ -1201,6 +1202,7 @@ $("#prevDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()-1); render(); };
 $("#nextDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()+1); render(); };
 $("#todayBtn").onclick=()=>{ viewDate=new Date(); viewDate.setHours(0,0,0,0); render(); };
 $("#rcCalc").onclick=calcRecon;
+$("#replayIntro").onclick=startOnboarding;
 seg("#libTabs", v=>{ libKind=v; renderLibrary(); });
 // mood / sleep / energy ratings — tap to set (tap again to clear), auto-saved
 document.querySelectorAll(".rate-btns").forEach(row=>{
