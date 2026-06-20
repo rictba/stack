@@ -58,7 +58,8 @@
   .tab-intro b{color:var(--text)}
   /* settings */
   .set-profile{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:6px}
-  .set-av{width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .set-av{width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
+  .set-av img{width:100%;height:100%;object-fit:cover}
   .set-grp{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:22px 4px 8px}
   .set-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
   .set-row{display:flex;align-items:center;gap:13px;padding:15px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:none;color:var(--text)}
@@ -1247,16 +1248,15 @@ function renderSettings(){
   };
   $("#setList").innerHTML = `
     <button class="set-profile" data-act="profile" style="width:100%;text-align:left">
-      <span class="set-av">${initial}</span>
+      <span class="set-av">${p.avatar?`<img src="${p.avatar}">`:initial}</span>
       <span style="flex:1"><span style="font-size:19px;font-weight:700;display:block">${esc(p.name||"Your profile")}</span>
-        <span style="color:var(--muted);font-size:13px">On-device profile · tap to edit</span></span>
+        <span style="color:var(--muted);font-size:13px">${p.email?esc(p.email):"On-device profile · tap to edit"}</span></span>
       <span class="chev">›</span>
     </button>
 
     <div class="set-grp">Profile</div>
     <div class="set-card">
       ${setRow(ICON.bell,"Reminders", sw(!!s.reminders), 'data-act="reminders"')}
-      ${setRow(ICON.ruler,"Body & measurements", `<span class="val">${p.weight?p.weight+" "+unit:"—"}</span><span class="chev">›</span>`, 'data-act="profile"')}
     </div>
 
     <div class="set-grp">Preferences</div>
@@ -1307,28 +1307,39 @@ function exportData(){
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 function openProfileEditor(){
-  const p=state.profile=state.profile||{}; const u=p.units||"imperial";
+  const p=state.profile=state.profile||{};
+  const initial=(p.name||"S").trim().charAt(0).toUpperCase();
+  let avatarData=p.avatar||null;
   $("#sheet").innerHTML=`
-    <h2>Profile & measurements</h2>
-    <div class="field"><label>First name</label><input id="pfName" value="${esc(p.name||"")}" placeholder="Your name"></div>
-    <div class="field"><label>Units</label>
-      <div class="seg" id="pfUnits"><button data-v="imperial" class="${u==='imperial'?'sel':''}">Imperial</button><button data-v="metric" class="${u==='metric'?'sel':''}">Metric</button></div></div>
-    <div class="row2">
-      <div class="field"><label>Weight (${u==='metric'?'kg':'lb'})</label><input id="pfWt" type="number" inputmode="decimal" value="${p.weight??""}"></div>
-      <div class="field"><label>Goal (${u==='metric'?'kg':'lb'})</label><input id="pfGoal" type="number" inputmode="decimal" value="${p.goalWeight??""}"></div>
+    <h2>Account</h2>
+    <div class="field"><label>Profile picture</label>
+      <div style="display:flex;align-items:center;gap:14px">
+        <span class="set-av" id="pfAvatar">${avatarData?`<img src="${avatarData}">`:initial}</span>
+        <label class="btn ghost" style="margin:0;width:auto;padding:11px 18px;cursor:pointer">Change picture
+          <input id="pfPic" type="file" accept="image/*" class="hidden"></label>
+      </div>
+      <div class="hint">JPG, PNG or GIF — stored on your device.</div>
     </div>
-    <div class="row2">
-      <div class="field"><label>Waist (${u==='metric'?'cm':'in'})</label><input id="pfWaist" type="number" inputmode="decimal" value="${p.waist??""}"></div>
-      <div class="field"><label>Waist goal</label><input id="pfWaistGoal" type="number" inputmode="decimal" value="${p.waistGoal??""}"></div>
-    </div>
+    <div class="field"><label>Full name</label><input id="pfName" value="${esc(p.name||"")}" placeholder="Your name"></div>
+    <div class="field"><label>Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="pfEmail" type="email" value="${esc(p.email||"")}" placeholder="you@email.com">
+      <div class="hint">Stored locally only — no account, not verified.</div></div>
     <button class="btn" id="pfSave">Save</button>
     <button class="btn ghost" id="pfCancel">Cancel</button>`;
-  let units=u;
-  seg("#pfUnits", v=>{ units=v; });
+  $("#pfPic").onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ const img=new Image(); img.onload=()=>{
+        const sz=256, scale=Math.min(sz/img.width, sz/img.height, 1);
+        const c=document.createElement("canvas"); c.width=img.width*scale; c.height=img.height*scale;
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        avatarData=c.toDataURL("image/jpeg",0.85);
+        $("#pfAvatar").innerHTML=`<img src="${avatarData}">`;
+      }; img.src=r.result; };
+    r.readAsDataURL(f);
+  };
   $("#pfSave").onclick=()=>{
-    p.name=$("#pfName").value.trim(); p.units=units;
-    p.weight=numOrNull($("#pfWt")); p.goalWeight=numOrNull($("#pfGoal"));
-    p.waist=numOrNull($("#pfWaist")); p.waistGoal=numOrNull($("#pfWaistGoal"));
+    p.name=$("#pfName").value.trim(); p.email=$("#pfEmail").value.trim(); p.avatar=avatarData;
     save(); closeSheet(); render();
   };
   $("#pfCancel").onclick=closeSheet;
