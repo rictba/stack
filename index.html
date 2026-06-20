@@ -1306,9 +1306,11 @@ function renderOb(){
     footHtml=obFoot("Continue", true, true);
   }
   else if(step==="reminders"){
+    const ri = state.items[0];
+    const notifMsg = ri ? `Time for ${esc(ri.name)}${ri.dose?" · "+esc(ri.dose.split("·")[0].trim()):""}` : "Time for your next dose";
     html=`<h2>Stay on top of your schedule</h2><p class="sub">We'll nudge you when a dose is due. Customize the timing or turn it off anytime.</p>
       <div class="ob-notif"><div class="nic">🔔</div>
-        <div><b>Stack</b><p>Time for Retatrutide · ~0.3 mg</p></div></div>`;
+        <div><b>Stack</b><p>${notifMsg}</p></div></div>`;
     footHtml=`<button class="ob-btn acc" id="obRemOn">🔔  Enable reminders</button>
       <button class="ob-skip" id="obSkip">Maybe later</button>`;
   }
