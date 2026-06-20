@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#0A0B0D">
+<meta name="theme-color" content="#F6F4EE">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Stack">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -13,10 +13,10 @@
 <title>Stack</title>
 <style>
   :root{
-    --bg:#0A0B0D; --surface:#15161A; --surface2:#1E1F25; --line:#2A2C34;
-    --text:#F2F3F5; --muted:#8A8D98; --accent:#7B6FE8; --accent-dim:#39356B;
-    --green:#3DD68C; --amber:#F2B33D; --red:#F2553D;
-    --pep:#7B6FE8; --sup:#3DA8D6;
+    --bg:#F6F4EE; --surface:#FFFFFF; --surface2:#EFECE4; --line:#E4E1D8;
+    --text:#1B1B19; --muted:#73706A; --accent:#C5806B; --accent-dim:#F8E8E1;
+    --green:#2E9E68; --amber:#B9791A; --red:#C0492F;
+    --pep:#C5806B; --sup:#3DA8D6;
     --r:16px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -27,7 +27,7 @@
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   input,select,textarea{font-family:inherit;font-size:16px}
 
-  header{position:sticky;top:0;z-index:20;background:rgba(10,11,13,.85);
+  header{position:sticky;top:0;z-index:20;background:rgba(246,244,238,.85);
     backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
     padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;border-bottom:1px solid var(--line)}
   .h-row{display:flex;align-items:center;justify-content:space-between}
@@ -49,7 +49,7 @@
   .progress-top b{font-size:15px}
   .progress-top span{font-size:13px;color:var(--muted)}
   .bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
-  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#9b8ff2);
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#e0a48d);
     border-radius:99px;transition:width .4s ease}
 
   .group-label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
@@ -69,8 +69,8 @@
   .item.done .item-name{text-decoration:line-through;text-decoration-color:var(--muted)}
   .item-sub{font-size:13px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pill{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:99px;text-transform:uppercase}
-  .pill.pep{background:var(--accent-dim);color:#c5beff}
-  .pill.sup{background:#1b4150;color:#9fdcf2}
+  .pill.pep{background:var(--accent-dim);color:#9a4f38}
+  .pill.sup{background:#dbeef6;color:#2c7fa0}
   .ts{font-size:11px;color:var(--muted)}
   .low-flag{font-size:11px;color:var(--amber);font-weight:600}
 
@@ -114,7 +114,7 @@
     width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:30px;
     display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(123,111,232,.45)}
 
-  nav{position:fixed;bottom:0;left:0;right:0;z-index:25;background:rgba(15,16,20,.92);
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:25;background:rgba(255,255,255,.92);
     backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);
     display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
   nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
@@ -140,11 +140,11 @@
   .seg{display:flex;gap:8px}
   .seg button{flex:1;padding:11px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);
     color:var(--muted);font-weight:600;font-size:14px}
-  .seg button.sel{background:var(--accent-dim);border-color:var(--accent);color:#fff}
+  .seg button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
   .chips{display:flex;gap:6px;flex-wrap:wrap}
   .chips button{padding:9px 0;flex:1;min-width:38px;border-radius:10px;background:var(--surface2);
     border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px}
-  .chips button.sel{background:var(--accent-dim);border-color:var(--accent);color:#fff}
+  .chips button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
   .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
   .btn{display:block;width:100%;padding:15px;border-radius:14px;background:var(--accent);color:#fff;
     font-weight:700;font-size:16px;margin-top:8px}
@@ -160,7 +160,7 @@
     width:100%;max-width:480px;margin:auto;padding:24px 20px calc(20px + env(safe-area-inset-bottom));text-align:center}
   .dsc-shield{width:54px;height:54px;border-radius:14px;background:var(--accent-dim);
     display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-  .dsc-shield svg{width:26px;height:26px;stroke:#c5beff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dsc-shield svg{width:26px;height:26px;stroke:#9a4f38;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .dsc-card h2{margin:0;font-size:22px;font-weight:700}
   .dsc-sub{color:var(--muted);font-size:14px;margin:4px 0 18px}
   .dsc-row{display:flex;gap:12px;text-align:left;background:var(--surface2);border:1px solid var(--line);
@@ -372,7 +372,7 @@
 
     <div class="dsc-row">
       <div class="dsc-bullet" style="background:var(--accent-dim)">
-        <svg style="stroke:#c5beff" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+        <svg style="stroke:#9a4f38" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
       <div><b>Personal Research Log</b><p>A private tool to log and organize your own research. It does not provide medical, health, or dosing guidance or recommendations of any kind.</p></div>
     </div>
     <div class="dsc-row">
@@ -397,7 +397,7 @@
     </div>
     <div class="dsc-row">
       <div class="dsc-bullet" style="background:var(--accent-dim)">
-        <svg style="stroke:#c5beff" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <svg style="stroke:#9a4f38" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
       <div><b>Responsibility &amp; Acceptance</b><p>You confirm you are 18 or older and accept full responsibility for how you use this log. It is provided "as is" without warranties of any kind. To the maximum extent permitted by law, the creator is not liable for any damages, and you agree to indemnify and hold the creator harmless. Governed by the laws of the State of Colorado, USA.</p></div>
     </div>
 
@@ -1087,9 +1087,9 @@ function renderLibrary(){
         <div class="item-body">
           <div class="item-name" style="white-space:normal">${esc(p.name)}
             ${p.tag?`<span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(p.tag)}</span>`:''}</div>
-          ${p.desc?`<div style="font-size:13px;color:#cfd1d8;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>`:''}
-          ${p.does?`<div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>`:''}
-          ${p.dose?`<div style="font-size:13px;color:#cfd1d8;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>`:''}
+          ${p.desc?`<div style="font-size:13px;color:#3d3b37;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>`:''}
+          ${p.does?`<div style="font-size:13px;color:#3d3b37;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>`:''}
+          ${p.dose?`<div style="font-size:13px;color:#3d3b37;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>`:''}
           ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
           <div style="margin-top:10px">
             <button class="mini-btn" data-libadd="${p.id}">+ Add to protocol</button>
