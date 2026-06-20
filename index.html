@@ -1399,24 +1399,32 @@ function renderMetricFields(){
         <div><p class="ob-lab">Height (in)</p><input class="ob-input" id="mIn" type="number" inputmode="numeric" value="${prof.htIn??""}"></div>
       </div>
       <p class="ob-lab">Weight (lb)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
-      <p class="ob-lab">Goal weight (lb)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}">`;
+      <p class="ob-lab">Goal weight (lb)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}" style="margin-bottom:16px">
+      <div class="ob-grid2" style="margin-bottom:0">
+        <div><p class="ob-lab">Waist (in)</p><input class="ob-input" id="mWaist" type="number" inputmode="decimal" value="${prof.waist??""}"></div>
+        <div><p class="ob-lab">Waist goal (in)</p><input class="ob-input" id="mWaistGoal" type="number" inputmode="decimal" value="${prof.waistGoal??""}"></div>
+      </div>`;
   } else {
     wrap.innerHTML=`<p class="ob-lab">Height (cm)</p><input class="ob-input" id="mCm" type="number" inputmode="decimal" value="${prof.htCm??""}" style="margin-bottom:16px">
       <p class="ob-lab">Weight (kg)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
-      <p class="ob-lab">Goal weight (kg)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}">`;
+      <p class="ob-lab">Goal weight (kg)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}" style="margin-bottom:16px">
+      <div class="ob-grid2" style="margin-bottom:0">
+        <div><p class="ob-lab">Waist (cm)</p><input class="ob-input" id="mWaist" type="number" inputmode="decimal" value="${prof.waist??""}"></div>
+        <div><p class="ob-lab">Waist goal (cm)</p><input class="ob-input" id="mWaistGoal" type="number" inputmode="decimal" value="${prof.waistGoal??""}"></div>
+      </div>`;
   }
   const readM=()=>{
     prof.units=u;
     if(u==="imperial"){ prof.htFt=numOrNull($("#mFt")); prof.htIn=numOrNull($("#mIn")); }
     else prof.htCm=numOrNull($("#mCm"));
     prof.weight=numOrNull($("#mWt")); prof.goalWeight=numOrNull($("#mGoal"));
-    const unit=u==="imperial"?"lb":"kg";
-    const to=$("#obToGo");
-    if(prof.weight!=null && prof.goalWeight!=null){
-      const d=+(prof.weight-prof.goalWeight).toFixed(1);
-      to.innerHTML=`<span class="dotr"></span><b>${Math.abs(d)} ${unit} to go</b> — we'll watch this with you.`;
-      to.style.display="";
-    } else to.style.display="none";
+    prof.waist=numOrNull($("#mWaist")); prof.waistGoal=numOrNull($("#mWaistGoal"));
+    const unit=u==="imperial"?"lb":"kg", wu=u==="imperial"?"in":"cm";
+    const to=$("#obToGo"); const bits=[];
+    if(prof.weight!=null && prof.goalWeight!=null) bits.push(`${Math.abs(+(prof.weight-prof.goalWeight).toFixed(1))} ${unit}`);
+    if(prof.waist!=null && prof.waistGoal!=null) bits.push(`${Math.abs(+(prof.waist-prof.waistGoal).toFixed(1))} ${wu} waist`);
+    if(bits.length){ to.innerHTML=`<span class="dotr"></span><b>${bits.join(" · ")} to go</b> — we'll watch this with you.`; to.style.display=""; }
+    else to.style.display="none";
   };
   wrap.querySelectorAll("input").forEach(i=>i.oninput=readM);
   $("#obUnits").querySelectorAll("button").forEach(b=>b.onclick=()=>{ prof.units=b.dataset.u; renderOb(); });
