@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#F6F4EE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Stack">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>Stack</title>
+<style>
+  :root{
+    --bg:#F6F4EE; --surface:#FFFFFF; --surface2:#EFECE4; --line:#E4E1D8;
+    --text:#1B1B19; --muted:#73706A; --accent:#2980B9; --accent-dim:#A9CCE3;
+    --green:#2E9E68; --amber:#B9791A; --red:#C0492F;
+    --pep:#2980B9; --sup:#3DA8D6;
+    --r:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    overscroll-behavior-y:none}
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:16px}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(246,244,238,.85);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    padding:calc(env(safe-area-inset-top) + 14px) 18px 12px;border-bottom:1px solid var(--line)}
+  .h-row{display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:22px;margin:0;font-weight:700;letter-spacing:-.5px}
+  header h1 .dot{color:var(--accent)}
+  .h-date{font-size:13px;color:var(--muted);margin-top:2px}
+  .date-nav{display:flex;align-items:center;gap:6px}
+  .date-nav button{width:34px;height:34px;border-radius:10px;background:var(--surface2);
+    font-size:18px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+
+  main{padding:16px 16px 24px;max-width:560px;margin:0 auto}
+  .tab{display:none}
+  .tab.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .progress-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+    padding:16px 18px;margin-bottom:18px}
+  .progress-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .progress-top b{font-size:15px}
+  .progress-top span{font-size:13px;color:var(--muted)}
+  .bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7FB3D8);
+    border-radius:99px;transition:width .4s ease}
+
+  .group-label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    margin:20px 4px 8px;font-weight:600}
+  .tab-intro{font-size:13px;color:var(--muted);margin:0 4px 16px;line-height:1.45}
+  .tab-intro b{color:var(--text)}
+  /* settings */
+  .set-profile{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:6px}
+  .set-av{width:54px;height:54px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto;overflow:hidden}
+  .set-av img{width:100%;height:100%;object-fit:cover}
+  .set-grp{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:22px 4px 8px}
+  .set-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .set-row{display:flex;align-items:center;gap:13px;padding:15px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:none;color:var(--text)}
+  .set-row:last-child{border-bottom:none}
+  .set-row .sic{width:22px;height:22px;flex:0 0 auto;stroke:var(--muted);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .set-row .lbl{flex:1;font-size:16px;font-weight:600}
+  .set-row .val{color:var(--muted);font-size:14px}
+  .set-row .chev{color:var(--muted);font-size:18px}
+  .set-row.danger .lbl{color:var(--red)}
+  .sw{width:46px;height:28px;border-radius:99px;background:var(--line);position:relative;flex:0 0 auto;transition:.2s}
+  .sw.on{background:var(--accent)}
+  .sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .sw.on i{left:21px}
+  .set-foot{text-align:center;color:var(--muted);font-size:12px;margin:20px 0 4px}
+
+  .item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
+    border-radius:14px;padding:14px;margin-bottom:10px;transition:.15s}
+  .item.done{opacity:.55}
+  .check{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:16px;color:transparent;transition:.15s}
+  .item.done .check{background:var(--green);border-color:var(--green);color:#06281a}
+  .swatch{width:4px;align-self:stretch;border-radius:99px;flex:0 0 auto}
+  .item-body{flex:1;min-width:0}
+  .item-name{font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .item.done .item-name{text-decoration:line-through;text-decoration-color:var(--muted)}
+  .item-sub{font-size:13px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 7px;border-radius:99px;text-transform:uppercase}
+  .pill.pep{background:var(--accent-dim);color:#1c5a85}
+  .pill.sup{background:#A2D9CE;color:#176856}
+  .ts{font-size:11px;color:var(--muted)}
+  .low-flag{font-size:11px;color:var(--amber);font-weight:600}
+
+  .empty{text-align:center;color:var(--muted);padding:48px 20px}
+  .empty .big{font-size:34px;margin-bottom:10px}
+  .empty p{margin:4px 0;font-size:14px;line-height:1.5}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .card-head{display:flex;align-items:center;gap:12px}
+  .card-head .item-body{cursor:pointer}
+  .mini-btn{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
+
+  .inv-row{display:flex;align-items:center;gap:14px}
+  .inv-meter{flex:1}
+  .inv-bar{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:8px}
+  .inv-bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+  .inv-num{font-size:13px;color:var(--muted)}
+  .inv-num b{color:var(--text);font-size:15px}
+
+  .j-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .j-field{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .j-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600}
+  .j-field input{width:100%;background:transparent;border:none;color:var(--text);font-size:22px;font-weight:600;padding:0}
+  .j-field input:focus{outline:none}
+  .j-field .unit{font-size:13px;color:var(--muted);font-weight:400}
+  .mood-row{display:flex;gap:8px;justify-content:space-between}
+  .mood-row button{font-size:26px;width:44px;height:44px;border-radius:12px;filter:grayscale(1) opacity(.45);transition:.15s}
+  .mood-row button.sel{filter:none;background:var(--surface2)}
+  .rate-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+  .rate-row:last-child{border-bottom:none}
+  .rate-label{font-size:14px;font-weight:600;color:var(--text);width:58px;flex:0 0 auto}
+  .rate-btns{display:flex;gap:3px}
+  .rate-btns button{font-size:22px;width:38px;height:38px;border-radius:10px;filter:grayscale(1) opacity(.4);transition:.15s}
+  .rate-btns button.sel{filter:none;background:var(--surface2)}
+  .site-sel{margin-top:8px;background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:7px 10px;font-size:13px;width:100%;max-width:200px}
+  textarea.note{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    color:var(--text);padding:14px;min-height:90px;resize:vertical;font-size:15px;line-height:1.5}
+  textarea.note:focus{outline:none;border-color:var(--accent)}
+
+  .fab{position:fixed;right:18px;bottom:calc(90px + env(safe-area-inset-bottom));z-index:30;
+    width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:30px;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(123,111,232,.45)}
+
+  nav{position:fixed;bottom:0;left:0;right:0;z-index:25;background:rgba(255,255,255,.92);
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);
+    display:flex;padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+  nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
+    font-size:10px;font-weight:600;padding:4px 0;letter-spacing:.02em}
+  nav button svg{width:24px;height:24px;stroke:currentColor;stroke-width:2;fill:none;
+    stroke-linecap:round;stroke-linejoin:round}
+  nav button.active{color:var(--accent)}
+
+  /* modal */
+  .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:none;align-items:flex-end}
+  .scrim.open{display:flex}
+  .sheet{background:var(--surface);width:100%;max-width:560px;margin:0 auto;border-radius:22px 22px 0 0;
+    border:1px solid var(--line);padding:18px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:92vh;overflow-y:auto;animation:slideup .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+  .sheet h2{margin:4px 0 18px;font-size:19px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;background:var(--surface2);border:1px solid var(--line);
+    border-radius:12px;color:var(--text);padding:12px 14px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:11px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);
+    color:var(--muted);font-weight:600;font-size:14px}
+  .seg button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chips button{padding:9px 0;flex:1;min-width:38px;border-radius:10px;background:var(--surface2);
+    border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px}
+  .chips button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .btn{display:block;width:100%;padding:15px;border-radius:14px;background:var(--accent);color:#fff;
+    font-weight:700;font-size:16px;margin-top:8px}
+  .btn.ghost{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+  .btn.danger{background:transparent;color:var(--red);margin-top:4px}
+  .hidden{display:none !important}
+
+  /* disclaimer */
+  .dsc{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:none;
+    align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+  .dsc.open{display:flex}
+  .dsc-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+    width:100%;max-width:480px;margin:auto;padding:24px 20px calc(20px + env(safe-area-inset-bottom));text-align:center}
+  .dsc-shield{width:54px;height:54px;border-radius:14px;background:var(--accent-dim);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  .dsc-shield svg{width:26px;height:26px;stroke:#1c5a85;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dsc-card h2{margin:0;font-size:22px;font-weight:700}
+  .dsc-sub{color:var(--muted);font-size:14px;margin:4px 0 18px}
+  .dsc-row{display:flex;gap:12px;text-align:left;background:var(--surface2);border:1px solid var(--line);
+    border-radius:14px;padding:14px;margin-bottom:10px}
+  .dsc-bullet{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .dsc-bullet svg{width:18px;height:18px;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .dsc-row b{display:block;font-size:15px;margin-bottom:3px}
+  .dsc-row p{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+  .dsc-check{display:flex;align-items:center;gap:10px;justify-content:flex-start;
+    padding:14px 4px 4px;font-size:15px;color:var(--text);cursor:pointer}
+  .dsc-check input{width:20px;height:20px;accent-color:var(--accent)}
+
+  /* onboarding (bright theme) */
+  .ob{--obg:#F6F4EE;--otx:#1b1b19;--omut:#73706a;--oln:#e4e1d8;--oacc:#2980B9;
+    --osoft:#A9CCE3;--ocard:#fff;--odark:#141414;
+    position:fixed;inset:0;z-index:70;background:var(--obg);color:var(--otx);display:none;flex-direction:column;
+    padding:calc(env(safe-area-inset-top) + 14px) 22px calc(18px + env(safe-area-inset-bottom));overflow-y:auto;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .ob.open{display:flex}
+  .ob-top{display:flex;align-items:center;gap:14px;margin-bottom:30px;flex:0 0 auto}
+  .ob-back{font-size:24px;color:var(--otx);width:24px;line-height:1}
+  .ob-bar{flex:1;height:4px;background:#e4e1d8;border-radius:99px;overflow:hidden}
+  .ob-bar i{display:block;height:100%;background:var(--odark);border-radius:99px;transition:width .3s ease}
+  .ob-body{flex:1;display:flex;flex-direction:column}
+  .ob-body.center{justify-content:center;text-align:center}
+  .ob h2{font-size:32px;font-weight:800;letter-spacing:-1px;margin:0 0 10px;line-height:1.08}
+  .ob .sub{color:var(--omut);font-size:16px;margin:0 0 26px;line-height:1.45}
+  .ob-brand{display:flex;align-items:center;justify-content:center;gap:8px;font-size:26px;font-weight:800;margin-bottom:30px}
+  .ob-brand .dot{color:var(--oacc)}
+  .ob-opt{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ocard);
+    border:1.5px solid var(--oln);border-radius:16px;padding:18px;margin-bottom:13px;text-align:left;width:100%;transition:.12s}
+  .ob-opt.sel{border-color:var(--oacc);background:var(--osoft)}
+  .ob-opt b{font-size:17px;display:block;color:var(--otx)}
+  .ob-opt p{margin:4px 0 0;font-size:14px;color:var(--omut)}
+  .ob-radio{width:26px;height:26px;border-radius:50%;border:2px solid var(--oln);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;color:transparent;font-size:15px}
+  .ob-opt.sel .ob-radio{background:var(--oacc);border-color:var(--oacc);color:#fff}
+  .ob-feat{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+  .ob-feat .ic{width:44px;height:44px;border-radius:12px;background:#ece9e1;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ob-feat .ic svg{width:22px;height:22px;stroke:var(--otx);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ob-feat b{font-size:17px}.ob-feat p{margin:3px 0 0;color:var(--omut);font-size:14px;line-height:1.45}
+  .ob-card{background:var(--ocard);border:1px solid var(--oln);border-radius:18px;padding:18px;margin-bottom:8px}
+  .ob-lab{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--omut);font-weight:700;margin:0 0 8px}
+  .ob-input{width:100%;background:var(--ocard);border:1.5px solid var(--oln);border-radius:14px;color:var(--otx);
+    padding:16px;font-size:18px;font-weight:600}
+  .ob-input:focus{outline:none;border-color:var(--oacc)}
+  .ob-seg{display:inline-flex;background:#eceae2;border-radius:99px;padding:4px;margin-bottom:18px}
+  .ob-seg button{padding:9px 20px;border-radius:99px;font-weight:700;font-size:15px;color:var(--omut)}
+  .ob-seg button.sel{background:#fff;color:var(--otx);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .ob-note{background:#efece4;border-radius:12px;padding:13px 15px;font-size:14px;color:var(--otx);margin-top:4px}
+  .ob-note .dotr{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--oacc);margin-right:8px}
+  .ob-foot{flex:0 0 auto;padding-top:18px}
+  .ob-btn{display:block;width:100%;padding:18px;border-radius:99px;background:var(--odark);color:#fff;
+    font-weight:700;font-size:17px}
+  .ob-btn.soft{background:#eceae2;color:var(--otx);margin-top:10px}
+  .ob-btn:disabled{opacity:.4}
+  .ob-skip{display:block;width:100%;text-align:center;color:var(--omut);font-weight:600;padding:16px;font-size:15px}
+  .ob-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .ob-btn.acc{background:var(--oacc)}
+  .ob-pill{display:inline-block;align-self:center;background:var(--osoft);color:var(--oacc);border-radius:99px;
+    padding:7px 16px;font-weight:700;font-size:14px;margin-bottom:22px}
+  .ob-notif{display:flex;gap:12px;align-items:center;background:#efece4;border-radius:16px;padding:14px 16px}
+  .ob-notif .nic{width:44px;height:44px;border-radius:12px;background:var(--oacc);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px}
+  .ob-notif b{font-size:15px}.ob-notif p{margin:2px 0 0;font-size:13px;color:var(--omut)}
+  .ob-rdy{display:flex;align-items:center;gap:12px;margin-bottom:15px;opacity:.3;transition:opacity .35s}
+  .ob-rdy.on{opacity:1}
+  .ob-rdy .ck{width:30px;height:30px;border-radius:50%;background:var(--oacc);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:15px;flex:0 0 auto}
+  .ob-rdy span{font-size:16px;font-weight:600}
+  .ob-list b{display:block;font-size:16px;margin:0 0 2px}
+  .ob-list .li{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+  .ob-list .li .ck{width:26px;height:26px;border-radius:50%;background:var(--osoft);color:var(--oacc);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto;margin-top:1px}
+  .ob-list .li p{margin:0;font-size:15px;line-height:1.35}
+  /* onboarding mock cards (dark, for contrast on the cream page) */
+  .ob-mock{background:#16181c;border-radius:18px;padding:16px;color:#fff;margin-bottom:6px}
+  .ob-mhead{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid #2a2d33}
+  .ob-mhead b{font-size:16px}.ob-mhead span{font-size:13px;color:#9aa0a6}
+  .ob-msec{font-size:11px;letter-spacing:.08em;color:#9aa0a6;margin:12px 0 8px;font-weight:700}
+  .ob-mrow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .ob-mrow .nm{font-weight:700;font-size:15px}
+  .ob-mrow .ds{font-size:13px;color:#9aa0a6}
+  .ob-mrow .tm{margin-left:auto;font-size:13px;color:#9aa0a6}
+  .ob-mrow .chk{width:26px;height:26px;border-radius:50%;background:var(--oacc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+  .ob-mtop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+  .ob-mtitle{font-size:18px;font-weight:800}
+  .ob-msub{font-size:13px;color:#9aa0a6}
+  .ob-mbig{font-size:26px;font-weight:800;color:var(--accent-dim)}
+  .ob-mpill{background:rgba(41,128,185,.25);color:#A9CCE3;border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;white-space:nowrap}
+  .ob-mx{display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-top:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-row">
+    <div>
+      <h1>Stack</h1>
+      <div class="h-date" id="hDate"></div>
+    </div>
+    <div class="date-nav" id="dateNav">
+      <button id="prevDay">‹</button>
+      <button id="todayBtn" style="width:auto;padding:0 12px;font-size:13px;font-weight:600">Today</button>
+      <button id="nextDay">›</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- TODAY -->
+  <section class="tab active" id="tab-today">
+    <div class="group-label">How are you feeling?</div>
+    <div class="card" style="padding:6px 14px">
+      <div class="rate-row"><span class="rate-label">Sleep</span>
+        <div class="rate-btns" data-metric="sleepQ">
+          <button data-v="1">😣</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">😄</button>
+        </div></div>
+      <div class="rate-row"><span class="rate-label">Energy</span>
+        <div class="rate-btns" data-metric="energy">
+          <button data-v="1">🪫</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">⚡</button>
+        </div></div>
+      <div class="rate-row"><span class="rate-label">Mood</span>
+        <div class="rate-btns" data-metric="mood">
+          <button data-v="1">😣</button><button data-v="2">🙁</button><button data-v="3">😐</button><button data-v="4">🙂</button><button data-v="5">😄</button>
+        </div></div>
+    </div>
+    <div class="j-grid" style="margin-top:14px">
+      <div class="j-field">
+        <label>Hours slept</label>
+        <input id="jHours" type="number" inputmode="decimal" placeholder="—"><span class="unit">hours</span>
+      </div>
+      <div class="j-field">
+        <label>Morning weight</label>
+        <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit">lb / kg</span>
+      </div>
+    </div>
+    <div id="weightChart"></div>
+    <div class="group-label">Protocol</div>
+    <div class="progress-card">
+      <div class="progress-top"><b>Daily progress</b><span id="progTxt">0 / 0</span></div>
+      <div class="bar"><i id="progBar" style="width:0%"></i></div>
+    </div>
+    <div id="todayList"></div>
+    <textarea class="note" id="jNote" placeholder="Notes — sides, observations, how you feel…" style="margin-top:14px"></textarea>
+  </section>
+
+  <!-- PROTOCOL -->
+  <section class="tab" id="tab-protocol">
+    <p class="tab-intro"><b>Your active stack.</b> The items, doses & schedules that drive your Today checklist.</p>
+    <div id="protoList"></div>
+    <div class="group-label">Reconstitution calculator</div>
+    <div class="card" style="padding:16px">
+      <div class="seg" id="rcMode" style="margin-bottom:12px">
+        <button data-v="inject" class="sel">Injection</button>
+        <button data-v="nasal">Nasal spray</button>
+      </div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:10px"><label>Vial size (mg)</label>
+          <input id="rcVial" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 10"></div>
+        <div class="field" style="margin-bottom:10px"><label>BAC water (ml)</label>
+          <input id="rcBac" type="number" inputmode="decimal" step="0.1" placeholder="e.g. 3"></div>
+      </div>
+      <div class="field" id="rcInjField" style="margin-bottom:10px"><label>Desired dose (mcg)</label>
+        <input id="rcDose" type="number" inputmode="decimal" step="1" placeholder="e.g. 200"></div>
+      <div class="field hidden" id="rcNasalField" style="margin-bottom:10px"><label>Spray volume (ml per spray)</label>
+        <input id="rcSpray" type="number" inputmode="decimal" step="0.01" placeholder="0.1" value="0.1"></div>
+      <button class="btn" id="rcCalc">Calculate</button>
+      <div id="rcResult" class="hidden" style="margin-top:14px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px">
+        <div class="fs-11" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Result</div>
+        <div id="rcConc" style="font-size:13px;color:var(--muted);margin-bottom:4px"></div>
+        <div id="rcUnits" style="font-size:24px;font-weight:700;color:var(--accent)"></div>
+        <div id="rcMl" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
+      </div>
+    </div>
+    <button class="btn ghost" id="replayIntro" style="margin-top:18px">Replay intro tour</button>
+  </section>
+
+  <!-- LIBRARY -->
+  <section class="tab" id="tab-library">
+    <p class="tab-intro"><b>Reference.</b> What each compound is, what it does, and recommended doses. Tap <b>+ Add to protocol</b> on anything you take.</p>
+    <div class="seg" id="libTabs" style="margin-bottom:16px">
+      <button data-v="peptide" class="sel">Peptides</button>
+      <button data-v="supplement">Supplements</button>
+    </div>
+    <div class="group-label" id="libHeading">Peptide library</div>
+    <div id="libList"></div>
+    <p class="hint" style="margin:14px 4px 0">Reference only — general information, not medical advice. Dosages vary by individual, source, and goal. Verify with your own protocol and a clinician.</p>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="tab" id="tab-settings">
+    <div id="setList"></div>
+  </section>
+</main>
+
+<button class="fab hidden" id="fab">+</button>
+
+<nav>
+  <button class="active" data-tab="today">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Today
+  </button>
+  <button data-tab="protocol">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
+    Protocol
+  </button>
+  <button data-tab="library">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Library
+  </button>
+  <button data-tab="settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</nav>
+
+<!-- ITEM EDITOR -->
+<div class="scrim" id="scrim">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="dsc" id="disclaimer">
+  <div class="dsc-card">
+    <div class="dsc-shield">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h2>Important Notice</h2>
+    <div class="dsc-sub">Please read before continuing</div>
+
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:var(--accent-dim)">
+        <svg style="stroke:#1c5a85" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></div>
+      <div><b>Personal Research Log</b><p>A private tool to log and organize your own research. It does not provide medical, health, or dosing guidance or recommendations of any kind.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#4a1f1a">
+        <svg style="stroke:#F2553D" viewBox="0 0 24 24"><path d="M3 12h4l2 5 4-10 2 5h4"/></svg></div>
+      <div><b>Not Medical Advice</b><p>Nothing here is medical advice, and using it creates no doctor–patient relationship. Consult a licensed healthcare provider before any decision. Never rely on this app in an emergency — call your local emergency number.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#43360f">
+        <svg style="stroke:#F2B33D" viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></div>
+      <div><b>Regulatory Status</b><p>Many substances referenced are not approved by the FDA and may be restricted or sold "for research use only — not for human consumption." You alone are responsible for complying with all laws in your jurisdiction.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#1b4150">
+        <svg style="stroke:#9fdcf2" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01"/></svg></div>
+      <div><b>Reference &amp; Calculator Accuracy</b><p>Reference ranges, library entries, and calculator results are shown for reference only, may contain errors, and are not recommendations. Verify every value and dose calculation independently.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:#11402c">
+        <svg style="stroke:#3DD68C" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <div><b>Your Data Stays on Your Device</b><p>Entries are stored only in this browser on your device — no accounts, no server. You are responsible for your own backups; clearing the browser or app deletes your data.</p></div>
+    </div>
+    <div class="dsc-row">
+      <div class="dsc-bullet" style="background:var(--accent-dim)">
+        <svg style="stroke:#1c5a85" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div><b>Responsibility &amp; Acceptance</b><p>You confirm you are 18 or older and accept full responsibility for how you use this log. It is provided "as is" without warranties of any kind. To the maximum extent permitted by law, the creator is not liable for any damages, and you agree to indemnify and hold the creator harmless. Governed by the laws of the State of Colorado, USA.</p></div>
+    </div>
+
+    <label class="dsc-check"><input type="checkbox" id="dscHide"> Don't show this again</label>
+    <button class="btn" id="dscAccept" style="margin-top:14px">I Understand and Accept</button>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="ob" id="onboard">
+  <div class="ob-top">
+    <button class="ob-back" id="obBack" style="visibility:hidden">‹</button>
+    <div class="ob-bar"><i id="obBar" style="width:0%"></i></div>
+  </div>
+  <div class="ob-body" id="obBody"></div>
+  <div class="ob-foot" id="obFoot"></div>
+</div>
+
+<script>
+"use strict";
+const KEY = "stack.data.v1";
+const $ = s => document.querySelector(s);
+const todayKey = d => { const x=new Date(d); x.setHours(0,0,0,0);
+  return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
+const SLOT_ORDER = ["AM","Midday","PM"];
+const SITES = ["Abdomen L","Abdomen R","Thigh L","Thigh R","Glute L","Glute R","Arm L","Arm R","Nasal","Oral","Other"];
+
+/* ---------- peptide reference library ---------- */
+const LIBRARY = [
+  { name:"CJC-1295 (no DAC)", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A growth-hormone-releasing hormone (GHRH) analog, often paired with a GHRP like Ipamorelin.",
+    does:"Stimulates a pulse of natural growth hormone — aimed at recovery, body composition, and sleep quality.",
+    dose:"100 mcg, 1–3×/day, subcutaneous. Often stacked 1:1 with Ipamorelin.",
+    half:"~30 min", duration:"2–3 hrs" },
+  { name:"Ipamorelin", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A selective growth-hormone secretagogue (GHRP) with minimal effect on cortisol or appetite.",
+    does:"Triggers a clean GH release; commonly used for recovery, lean mass, and sleep.",
+    dose:"200–300 mcg, 1–3×/day SubQ, often with CJC-1295. Empty stomach / before bed.",
+    half:"~2 hrs", duration:"3–4 hrs" },
+  { name:"BPC-157", tag:"Healing / repair", col:"#3DD68C",
+    desc:"A synthetic peptide derived from a protein found in gastric juice.",
+    does:"Studied for soft-tissue, tendon, ligament, and gut healing, plus reduced inflammation.",
+    dose:"250–500 mcg, 1–2×/day SubQ (often near the injury site).",
+    half:"~4 hrs", duration:"6–8 hrs" },
+  { name:"TB-500 (Thymosin β4)", tag:"Healing / repair", col:"#3DD68C",
+    desc:"A synthetic fragment of Thymosin beta-4, a protein involved in cell migration and repair.",
+    does:"Promotes tissue repair, flexibility, and recovery; frequently paired with BPC-157.",
+    dose:"2–2.5 mg, 2×/week SubQ for a loading phase, then weekly maintenance.",
+    half:"Several days", duration:"Systemic" },
+  { name:"Retatrutide", tag:"Metabolic / GLP", col:"#E07B3A",
+    desc:"An investigational triple agonist (GLP-1 / GIP / glucagon receptors).",
+    does:"Targets significant weight loss and metabolic improvement; titrated up slowly.",
+    dose:"Weekly SubQ, titrated (e.g. 0.5→12 mg over weeks). Follow a titration schedule.",
+    half:"~6 days", duration:"Weekly dosing" },
+  { name:"Selank", tag:"Nootropic / mood", col:"#3B8BF0",
+    desc:"A synthetic anxiolytic peptide based on the immunomodulator tuftsin.",
+    does:"Used for anxiety reduction, calm focus, and stress resilience without sedation.",
+    dose:"~250–500 mcg/day intranasal (typically split into sprays).",
+    half:"~few min (nasal)", duration:"4–6 hrs CNS" },
+  { name:"Semax", tag:"Nootropic / focus", col:"#E05BA0",
+    desc:"A synthetic peptide derived from ACTH, used as a nootropic.",
+    does:"Studied for focus, memory, mental energy, and neuroprotection.",
+    dose:"~300–600 mcg/day intranasal, split into sprays.",
+    half:"~few min (nasal)", duration:"4–6 hrs CNS" },
+  { name:"GHK-Cu", tag:"Skin / hair", col:"#6FD6C7",
+    desc:"A naturally occurring copper-binding tripeptide.",
+    does:"Used (topically/SubQ) for skin remodeling, collagen, wound healing, and hair.",
+    dose:"1–2 mg/day SubQ, or topical formulations for skin/hair.",
+    half:"Short", duration:"Local / systemic" },
+  { name:"Tesamorelin", tag:"Growth hormone", col:"#7B6FE8",
+    desc:"A stabilized GHRH analog, FDA-approved to reduce visceral fat in specific conditions.",
+    does:"Boosts GH/IGF-1; targeted at visceral (belly) fat reduction. Check IGF-1 at 6 weeks before increasing.",
+    dose:"20 mg vial + 10 ml BAC = 2 mg/ml. Start 1 mg/day = 50 u, bedtime fasted.",
+    half:"~25–40 min", duration:"Hours" },
+  { name:"Epithalon", tag:"Longevity / anti-aging", col:"#6FD6C7",
+    desc:"A 4-amino-acid peptide studied for telomerase activation and circadian/pineal regulation.",
+    does:"Used in short cycles for anti-aging, sleep, and stress resilience.",
+    dose:"5 mg/day = 30 u SubQ, nightly × 10 nights. 50 mg vial + 3 ml BAC = 16.67 mg/ml (1 vial = 1 cycle). Cycle: 10 on, 2–4 months off.",
+    half:"Short", duration:"10-day cycles" },
+  { name:"KPV", tag:"Gut / anti-inflammatory", col:"#3DD68C",
+    desc:"A tripeptide fragment of alpha-MSH (arginate salt capsules).",
+    does:"Gut inflammation and gut-brain-axis anxiety support. Pairs with BPC-157 and Selank.",
+    dose:"500 mcg 1×/day morning fasted → 2×/day after wk3. Oral caps. Cycle 4–8 wk on, 2–4 wk off.",
+    half:"Short", duration:"Cycled" },
+  // ---- supplements ----
+  { name:"Vitamin D3", kind:"supplement", tag:"Vitamin", col:"#F2B33D",
+    desc:"A fat-soluble vitamin/prohormone the body makes from sunlight.",
+    does:"Supports bone health, immune function, and mood; often paired with K2.",
+    dose:"1,000–5,000 IU/day with a fatty meal (test levels to dial in).",
+    half:"~2–3 weeks", duration:"Daily" },
+  { name:"Magnesium Glycinate", kind:"supplement", tag:"Mineral", col:"#3DD68C",
+    desc:"A highly absorbable, gentle form of the mineral magnesium.",
+    does:"Supports sleep, muscle relaxation, and stress; less GI upset than oxide.",
+    dose:"200–400 mg elemental, evening.",
+    half:"—", duration:"Daily" },
+  { name:"Omega-3 (Fish Oil)", kind:"supplement", tag:"Essential fatty acid", col:"#3DA8D6",
+    desc:"EPA/DHA long-chain omega-3 fatty acids.",
+    does:"Supports heart, brain, joints, and reduces inflammation.",
+    dose:"1–3 g/day combined EPA+DHA, with food.",
+    half:"—", duration:"Daily" },
+  { name:"Creatine Monohydrate", kind:"supplement", tag:"Performance", col:"#7B6FE8",
+    desc:"The most researched sports supplement; supports the ATP energy system.",
+    does:"Improves strength, power, muscle volume, and may aid cognition.",
+    dose:"3–5 g/day, any time; no loading needed.",
+    half:"—", duration:"Daily" },
+  { name:"Zinc", kind:"supplement", tag:"Mineral", col:"#D67BD6",
+    desc:"An essential trace mineral.",
+    does:"Supports immune function, hormones, and skin; don't overdo long-term.",
+    dose:"15–30 mg/day with food (balance with copper if chronic).",
+    half:"—", duration:"Daily" },
+  { name:"NR (Nicotinamide Riboside)", kind:"supplement", tag:"NAD+ / longevity", col:"#F2B33D",
+    desc:"A NAD+ precursor.",
+    does:"Supports cellular energy/NAD+ levels. MUST pair with TMG — without it, NR depletes methyl groups (→ high homocysteine, anxiety, brain fog, fatigue).",
+    dose:"1,000 mg daily, morning.",
+    half:"—", duration:"Daily" },
+  { name:"TMG", kind:"supplement", tag:"Methyl donor", col:"#F2553D",
+    desc:"Trimethylglycine (betaine anhydrous), a methyl donor.",
+    does:"Replaces methyl groups consumed during NR/NAD+ conversion; mandatory alongside NR.",
+    dose:"500 mg daily, same time as NR.",
+    half:"—", duration:"Daily" },
+  { name:"Methylated B Complex", kind:"supplement", tag:"B vitamins", col:"#E8A33D",
+    desc:"Micro Ingredients — full B-complex in activated/methylated forms (L-5-MTHF folate, methylcobalamin B12, P-5-P B6, riboflavin-5-phosphate) plus fat-soluble vitamin C (ascorbyl palmitate). 240 caps, 120 servings.",
+    does:"Supports energy metabolism, methylation, nervous system, and mood. Activated forms are easier to use, especially with MTHFR variants.",
+    dose:"2 capsules daily with food. Per serving: B1 100mg, B2 20mg, B3 30mg, B5 50mg, B6 20mg, B9 1700mcg DFE, B12 1000mcg, biotin 2000mcg, choline 30mg, inositol 20mg, vit C 150mg.",
+    half:"—", duration:"Daily" },
+];
+
+/* ---------- your protocol (from STACK_CONTEXT) ---------- */
+const STARTER_V = 2;
+const STARTER = [
+  // injections — bedtime, fasted 2+ hrs
+  { name:"CJC-1295 + Ipamorelin", type:"peptide", dose:"9 u (wk1–2) → 12 u (wk3+) · 150–200 mcg ea · fasted",
+    slots:["PM"], schedule:{type:"weekly", days:[1,2,3,4,5]}, inject:true, color:"#7B6FE8",
+    trackInv:true, dosesLeft:50, capacity:50, lowAt:6 },
+  { name:"BPC-157 + TB-500", type:"peptide", dose:"500 mcg (250 ea) = 50 u · starts Jun 29",
+    slots:["PM"], schedule:{type:"weekly", days:[1,4]}, inject:true, color:"#3DD68C",
+    trackInv:true, dosesLeft:20, capacity:20, lowAt:3 },
+  { name:"Retatrutide", type:"peptide", dose:"~0.3 mg (titrating) · every 4 days",
+    slots:["PM"], schedule:{type:"cycle", daysOn:1, daysOff:3, startDate:"2026-05-22"}, inject:true, color:"#E07B3A" },
+  // nasal — morning
+  { name:"Selank", type:"peptide", dose:"400 mcg (1 spray/nostril) · within 30–45 min of waking",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#3DA8D6" },
+  { name:"Semax", type:"peptide", dose:"200–400 mcg · situational (pre-workout/focus)",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#E05BA0" },
+  // oral — morning
+  { name:"KPV", type:"peptide", dose:"500 mcg 1×/day fasted → 2×/day after wk3",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#6FD6C7" },
+  { name:"NR (Nicotinamide Riboside)", type:"supplement", dose:"1,000 mg · MUST take with TMG",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#F2B33D" },
+  { name:"TMG", type:"supplement", dose:"500 mg · same time as NR",
+    slots:["AM"], schedule:{type:"daily"}, inject:false, color:"#F2553D" },
+];
+
+/* ---------- dose reference ranges (per dose unless noted) ---------- */
+const DOSE_REF = {
+  "retatrutide":{lo:1,hi:12,unit:"mg",freq:"weekly"},
+  "bpc-157":{lo:250,hi:500,unit:"mcg",freq:"1–2×/day"},
+  "tb-500 (thymosin β4)":{lo:2,hi:2.5,unit:"mg",freq:"2×/week"},
+  "tb-500":{lo:2,hi:2.5,unit:"mg",freq:"2×/week"},
+  "cjc-1295 (no dac)":{lo:100,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "cjc-1295":{lo:100,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "ipamorelin":{lo:200,hi:300,unit:"mcg",freq:"1–3×/day"},
+  "tesamorelin":{lo:1,hi:2,unit:"mg",freq:"daily"},
+  "selank":{lo:250,hi:500,unit:"mcg",freq:"daily"},
+  "semax":{lo:200,hi:600,unit:"mcg",freq:"daily"},
+  "ghk-cu":{lo:1,hi:2,unit:"mg",freq:"daily"},
+  "epithalon":{lo:5,hi:10,unit:"mg",freq:"daily (cycle)"},
+  "kpv":{lo:250,hi:500,unit:"mcg",freq:"1–2×/day"},
+};
+function refFor(name){ return DOSE_REF[(name||"").trim().toLowerCase()] || null; }
+// reconstitution → units to draw on a 1cc / 100-unit syringe
+function drawCalc(amt, unit, vialMg, bacMl){
+  if(unit==="units") return { units:amt, ml:amt/100, mgPerMl:null };
+  const doseMg = unit==="mcg" ? amt/1000 : (unit==="mg" ? amt : null);
+  if(doseMg==null || !amt || !vialMg || !bacMl) return null;
+  const mgPerMl = vialMg/bacMl, ml = doseMg/mgPerMl;
+  return { units: ml*100, ml, mgPerMl };
+}
+
+const LIB_SEED_V = 2;
+let state = load();
+save();
+let viewDate = new Date(); viewDate.setHours(0,0,0,0);
+let curTab = "today";
+let libKind = "peptide";
+
+function load(){
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+  if(!d || !d.items) d = { items: [], logs: {}, journal: {} };
+  // seed the reference library on first run; afterwards it's user-editable
+  if(!Array.isArray(d.library)) d.library = LIBRARY.map(p=>({id:uid(), ...p}));
+  // backfill any newly-added default library entries (once per seed version)
+  if(d.libSeedV !== LIB_SEED_V){
+    const have = new Set(d.library.map(p=>(p.name||"").toLowerCase()));
+    LIBRARY.forEach(p=>{ if(!have.has(p.name.toLowerCase())) d.library.push({id:uid(), ...p}); });
+    d.libSeedV = LIB_SEED_V;
+  }
+  d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
+  // integrity: guarantee unique, non-empty item ids
+  d.logs = d.logs || {};
+  d.settings = d.settings || {};
+  const seen=new Set();
+  (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
+  // drop orphaned dose logs (keys whose item id no longer exists) — clears stale "done" marks
+  const validIds=new Set((d.items||[]).map(i=>i.id));
+  Object.keys(d.logs).forEach(day=>{
+    Object.keys(d.logs[day]).forEach(k=>{ if(!validIds.has(k.split("__")[0])) delete d.logs[day][k]; });
+  });
+  return d;
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+/* ---------- schedule logic ---------- */
+function scheduledToday(item, date){
+  const s = item.schedule || {type:"daily"};
+  if(s.type === "daily") return true;
+  if(s.type === "weekly") return (s.days||[]).includes(date.getDay());
+  if(s.type === "cycle"){
+    const start = s.startDate ? new Date(s.startDate+"T00:00:00") : new Date(date);
+    const on = +s.daysOn||1, off = +s.daysOff||0, period = on+off;
+    if(period<=0) return true;
+    const diff = Math.floor((date - start)/86400000);
+    if(diff < 0) return false;
+    return (diff % period) < on;
+  }
+  return true;
+}
+function slotsFor(item){ const s=item.slots&&item.slots.length?item.slots:["AM"];
+  return SLOT_ORDER.filter(x=>s.includes(x)); }
+function logKey(item, slot){ return item.id+"__"+slot; }
+function isInject(item){ return item.inject!==undefined ? item.inject : item.type==="peptide"; }
+
+/* ---------- dose logging (entry can be a timestamp number, or {t, site}) ---------- */
+function entryOf(item, slot, date){ const day=state.logs[todayKey(date)]; return day ? day[logKey(item,slot)] : undefined; }
+function tsOf(e){ return e==null ? null : (typeof e==="object" ? e.t : e); }
+function siteOf(e){ return (e && typeof e==="object") ? (e.site||"") : ""; }
+function isLogged(item, slot, date){ return !!entryOf(item, slot, date); }
+function toggleDose(item, slot){
+  const dk = todayKey(viewDate);
+  state.logs[dk] = state.logs[dk] || {};
+  const k = logKey(item, slot);
+  if(state.logs[dk][k]){
+    delete state.logs[dk][k];
+    if(item.trackInv) item.dosesLeft = Math.min((item.dosesLeft||0)+1, item.capacity||9999);
+  } else {
+    state.logs[dk][k] = { t: Date.now(), site: "" };
+    if(item.trackInv) item.dosesLeft = Math.max((item.dosesLeft||0)-1, 0);
+  }
+  save(); render();
+}
+function setSite(item, slot, site){
+  const dk = todayKey(viewDate); const k = logKey(item, slot);
+  const e = state.logs[dk] && state.logs[dk][k]; if(!e) return;
+  if(typeof e === "object") e.site = site;
+  else state.logs[dk][k] = { t: e, site };
+  save();
+}
+
+/* ---------- rendering ---------- */
+function fmtTime(ts){ const d=new Date(ts);
+  return d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+
+function renderHeader(){
+  const isToday = todayKey(viewDate)===todayKey(new Date());
+  const opts = {weekday:"long", month:"short", day:"numeric"};
+  $("#hDate").textContent = isToday ? "Today · "+viewDate.toLocaleDateString([], opts)
+                                    : viewDate.toLocaleDateString([], opts);
+  $("#todayBtn").style.color = isToday ? "var(--muted)" : "var(--accent)";
+}
+
+function renderToday(){
+  // ---- daily metrics (mood / sleep / energy / hours / weight / note) ----
+  const j = state.journal[todayKey(viewDate)] || {};
+  document.querySelectorAll(".rate-btns").forEach(row=>{
+    const m = row.dataset.metric;
+    row.querySelectorAll("button").forEach(b=>b.classList.toggle("sel", +b.dataset.v===j[m]));
+  });
+  $("#jHours").value = j.hours ?? "";
+  $("#jWeight").value = j.weight ?? "";
+  $("#jNote").value = j.note ?? "";
+  $("#weightChart").innerHTML = buildWeightChart();
+
+  // ---- protocol checklist ----
+  const list = $("#todayList");
+  const items = state.items.filter(i=>scheduledToday(i, viewDate));
+  if(state.items.length===0){
+    list.innerHTML = emptyState("🧬","No protocol yet","Head to <b>Protocol</b> and add your first peptide or supplement.");
+    $("#progTxt").textContent="0 / 0"; $("#progBar").style.width="0%"; return;
+  }
+  if(items.length===0){
+    list.innerHTML = emptyState("🌙","Nothing scheduled","No items are scheduled for this day — enjoy the off-cycle.");
+    $("#progTxt").textContent="0 / 0"; $("#progBar").style.width="0%"; return;
+  }
+  const bySlot = {};
+  let total=0, done=0;
+  items.forEach(it=>slotsFor(it).forEach(sl=>{
+    (bySlot[sl]=bySlot[sl]||[]).push(it); total++;
+    if(isLogged(it,sl,viewDate)) done++;
+  }));
+  let html="";
+  SLOT_ORDER.forEach(sl=>{
+    if(!bySlot[sl]) return;
+    html += `<div class="group-label">${sl}</div>`;
+    bySlot[sl].forEach(it=>{
+      const e = entryOf(it,sl,viewDate);
+      const logged = !!e, ts = tsOf(e), site = siteOf(e);
+      const low = it.trackInv && (it.dosesLeft||0) <= (it.lowAt||0);
+      const siteSel = (logged && isInject(it) && state.settings.trackSites!==false) ? `<select class="site-sel" data-sitekey="${it.id}__${sl}">
+          <option value="">📍 Injection site…</option>
+          ${SITES.map(s=>`<option ${site===s?'selected':''}>${s}</option>`).join("")}
+        </select>` : "";
+      html += `<div class="item ${logged?'done':''}">
+        <div class="check" data-toggle="${it.id}" data-slot="${sl}">✓</div>
+        <div class="swatch" style="background:${it.color}"></div>
+        <div class="item-body">
+          <div class="item-name" data-toggle="${it.id}" data-slot="${sl}">${esc(it.name)}
+            <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
+          <div class="item-sub">${esc(it.dose||'')}${ts?' · <span class="ts">'+fmtTime(ts)+'</span>':''}${low?' · <span class="low-flag">⚠ low</span>':''}</div>
+          ${siteSel}
+        </div>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+  $("#progTxt").textContent = done+" / "+total;
+  $("#progBar").style.width = (total? (done/total*100):0)+"%";
+  list.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{
+    const it = state.items.find(i=>i.id===el.dataset.toggle);
+    toggleDose(it, el.dataset.slot);
+  });
+  list.querySelectorAll(".site-sel").forEach(sel=>sel.onchange=()=>{
+    const [id,slot]=sel.dataset.sitekey.split("__");
+    setSite(state.items.find(i=>i.id===id), slot, sel.value);
+  });
+}
+
+function renderProtocol(){
+  const list=$("#protoList");
+  if(state.items.length===0){
+    list.innerHTML = emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
+    return;
+  }
+  list.innerHTML = state.items.map(it=>{
+    const sch = scheduleLabel(it.schedule);
+    return `<div class="card"><div class="card-head">
+      <div class="swatch" style="background:${it.color};height:42px"></div>
+      <div class="item-body" data-edit="${it.id}">
+        <div class="item-name">${esc(it.name)}
+          <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
+        <div class="item-sub">${esc(it.dose||'—')} · ${slotsFor(it).join(' / ')} · ${sch}</div>
+        ${it.mfr?`<div class="item-sub" style="color:#9a9da8">🏷 ${esc(it.mfr)}</div>`:''}
+      </div>
+      <button class="mini-btn" data-edit="${it.id}">Edit</button>
+      <button class="mini-btn" data-del="${it.id}" style="color:var(--red)">Remove</button>
+    </div></div>`;
+  }).join("");
+  list.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>openEditor(el.dataset.edit));
+  list.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>{
+    const it=state.items.find(i=>i.id===el.dataset.del);
+    if(confirm(`Remove "${it.name}" from your protocol?\n\nPast dose logs and journal entries are kept.`)){
+      state.items=state.items.filter(i=>i.id!==it.id); save(); render();
+    }
+  });
+}
+function renderInventory(){
+  const list=$("#invList");
+  const tracked = state.items.filter(i=>i.trackInv);
+  if(tracked.length===0){
+    list.innerHTML = emptyState("📦","No inventory tracked","Enable inventory on an item (in Protocol) to track doses remaining and get low-stock warnings.");
+    return;
+  }
+  // sort low stock first
+  tracked.sort((a,b)=>(a.dosesLeft/(a.capacity||1))-(b.dosesLeft/(b.capacity||1)));
+  list.innerHTML = tracked.map(it=>{
+    const left=it.dosesLeft||0, cap=it.capacity||left||1;
+    const pct=Math.max(0,Math.min(100, left/cap*100));
+    const low = left <= (it.lowAt||0);
+    const col = low?'var(--red)':(left<=cap*0.33?'var(--amber)':'var(--green)');
+    return `<div class="card"><div class="inv-row">
+      <div class="swatch" style="background:${it.color};height:46px"></div>
+      <div class="inv-meter">
+        <div class="item-name" style="font-size:15px">${esc(it.name)}
+          ${low?'<span class="low-flag">⚠ reorder</span>':''}</div>
+        <div class="inv-bar"><i style="width:${pct}%;background:${col}"></i></div>
+      </div>
+      <div class="inv-num" style="text-align:right"><b>${left}</b><br>doses</div>
+      <button class="mini-btn" data-restock="${it.id}">Restock</button>
+    </div></div>`;
+  }).join("");
+  list.querySelectorAll("[data-restock]").forEach(el=>el.onclick=()=>restock(el.dataset.restock));
+}
+
+function restock(id){
+  const it=state.items.find(i=>i.id===id);
+  const add = prompt(`Add doses to "${it.name}"\nCurrent: ${it.dosesLeft||0} doses`, it.capacity||30);
+  if(add===null) return;
+  const n=parseInt(add,10); if(isNaN(n)) return;
+  it.dosesLeft=(it.dosesLeft||0)+n;
+  if((it.capacity||0) < it.dosesLeft) it.capacity=it.dosesLeft;
+  save(); render();
+}
+
+/* ---------- weight progress chart ---------- */
+function buildWeightChart(){
+  const pts = Object.keys(state.journal)
+    .filter(k=>state.journal[k].weight!=null)
+    .sort()
+    .map(k=>({ d:new Date(k+"T00:00:00"), w:+state.journal[k].weight }));
+  const unit = (state.profile && state.profile.units==="metric") ? "kg" : "lb";
+  const goal = state.profile && state.profile.goalWeight!=null ? +state.profile.goalWeight : null;
+  if(pts.length===0){
+    return `<div class="group-label">Body weight</div>
+      <div class="card" style="padding:20px;text-align:center;color:var(--muted);font-size:14px">
+        Log your morning weight to start your trend.</div>`;
+  }
+  const cur = pts[pts.length-1].w, first = pts[0].w;
+  const change = +(cur-first).toFixed(1);
+  const chgCol = change<0 ? "var(--green)" : (change>0 ? "var(--amber)" : "var(--muted)");
+  const days = Math.max(0, Math.round((pts[pts.length-1].d - pts[0].d)/86400000));
+  const wks = (days/7);
+  const period = pts.length<2 ? `${pts.length} entry` : (wks>=1 ? `${wks.toFixed(wks<10?1:0)} wk` : `${days} days`);
+
+  let chart="";
+  if(pts.length>=2){
+    const W=320,H=150,p=18, n=pts.length;
+    let lo=Math.min(...pts.map(o=>o.w)), hi=Math.max(...pts.map(o=>o.w));
+    if(goal!=null){ lo=Math.min(lo,goal); hi=Math.max(hi,goal); }
+    if(hi===lo){ hi+=1; lo-=1; }
+    const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+    const x=i=> p + (i/(n-1))*(W-2*p);
+    const y=w=> H-p - ((w-lo)/(hi-lo))*(H-2*p);
+    const line = pts.map((o,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(o.w).toFixed(1)}`).join(" ");
+    const area = `${line} L${x(n-1).toFixed(1)} ${H-p} L${x(0).toFixed(1)} ${H-p} Z`;
+    const goalLine = (goal!=null && goal>=lo && goal<=hi)
+      ? `<line x1="${p}" y1="${y(goal).toFixed(1)}" x2="${W-p}" y2="${y(goal).toFixed(1)}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="4 4" opacity=".6"/>
+         <text x="${W-p}" y="${(y(goal)-5).toFixed(1)}" text-anchor="end" fill="var(--muted)" font-size="9">goal ${goal}</text>` : "";
+    const dots = pts.map((o,i)=> (i===0||i===n-1) ? `<circle cx="${x(i).toFixed(1)}" cy="${y(o.w).toFixed(1)}" r="3.5" fill="var(--accent)"/>` : "").join("");
+    chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block;margin-top:6px;height:150px">
+        <defs><linearGradient id="wgrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/>
+          <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+        ${goalLine}
+        <path d="${area}" fill="url(#wgrad)"/>
+        <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${dots}
+      </svg>`;
+  }
+  const toGo = goal!=null ? ` · ${Math.abs(+(cur-goal).toFixed(1))} ${unit} to goal` : "";
+  return `<div class="group-label">Body weight</div>
+    <div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><div style="font-size:28px;font-weight:800;letter-spacing:-.5px">${cur}<span style="font-size:14px;color:var(--muted);font-weight:600"> ${unit}</span></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${period}${pts.length>=2?` · ${pts.length} check-ins`:""}</div></div>
+        ${pts.length>=2?`<div style="background:var(--surface2);border:1px solid var(--line);border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;color:${chgCol}">${change>0?"+":""}${change} ${unit}</div>`:""}
+      </div>
+      ${chart}
+      ${goal!=null?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Goal ${goal} ${unit}${toGo}</div>`:""}
+    </div>`;
+}
+
+// daily metrics auto-save into state.journal[date]
+function journalToday(){ const dk=todayKey(viewDate); return state.journal[dk] = state.journal[dk] || {}; }
+function setMetric(key, val){ journalToday()[key] = val; save(); }
+
+/* ---------- editor sheet ---------- */
+let editId=null;
+function openEditor(id, prefill){
+  editId=id;
+  const it = id ? state.items.find(i=>i.id===id) : {
+    name:"", type:"peptide", dose:"", slots:["AM"], color:COLORS[state.items.length%COLORS.length],
+    schedule:{type:"daily"}, trackInv:false, dosesLeft:0, capacity:30, lowAt:5,
+    ...(prefill||{})
+  };
+  const sch=it.schedule||{type:"daily"};
+  const sheet=$("#sheet");
+  sheet.innerHTML = `
+    <h2>${id?"Edit item":"Add to stack"}</h2>
+    <div class="field"><label>Name</label>
+      <input id="fName" placeholder="e.g. BPC-157, Creatine" value="${esc(it.name)}"></div>
+    <div class="field"><label>Type</label>
+      <div class="seg" id="fType">
+        <button data-v="peptide" class="${it.type==='peptide'?'sel':''}">Peptide</button>
+        <button data-v="supplement" class="${it.type==='supplement'?'sel':''}">Supplement</button>
+      </div></div>
+
+    <div class="field" id="fRouteWrap"><label>Injection route</label>
+      <div class="seg" id="fRoute">
+        <button data-v="SubQ" class="${(it.route||'SubQ')==='SubQ'?'sel':''}">SubQ</button>
+        <button data-v="IM" class="${it.route==='IM'?'sel':''}">IM</button>
+      </div></div>
+
+    <div class="field"><label>Dose</label>
+      <div class="card" style="padding:14px;background:var(--surface2)">
+        <div style="display:flex;gap:10px;align-items:center">
+          <input id="fAmt" type="number" inputmode="decimal" step="any" placeholder="amount" value="${it.doseAmt??''}" style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+          <select id="fUnit" style="width:96px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 8px">
+            ${["mg","mcg","units","caps","g","IU"].map(u=>`<option ${((it.doseUnit||'mg')===u)?'selected':''}>${u}</option>`).join("")}
+          </select>
+        </div>
+        <div id="fRecon" class="row2" style="margin-top:10px">
+          <input id="fVial" type="number" inputmode="decimal" step="any" placeholder="vial mg" value="${it.vialMg??''}" style="background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+          <input id="fBac" type="number" inputmode="decimal" step="any" placeholder="BAC water ml" value="${it.bacMl??''}" style="background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+        </div>
+        <div id="fDoseOut" style="font-size:13px;margin-top:10px;line-height:1.5"></div>
+      </div>
+      <input id="fDose" type="hidden" value="${esc(it.dose||'')}">
+      <div class="hint" id="fDoseManual" style="margin-top:8px"></div>
+    </div>
+
+    <div class="field"><label>Manufacturer / source <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="fMfr" placeholder="e.g. Thorne, Core Peptides" value="${esc(it.mfr||'')}"></div>
+    <div class="field"><label>When (timing)</label>
+      <div class="seg" id="fSlots">
+        ${SLOT_ORDER.map(s=>`<button data-v="${s}" class="${slotsFor(it).includes(s)?'sel':''}">${s}</button>`).join("")}
+      </div></div>
+
+    <div class="field"><label>Schedule</label>
+      <div class="seg" id="fSchedType">
+        <button data-v="daily" class="${sch.type==='daily'?'sel':''}">Daily</button>
+        <button data-v="cycle" class="${sch.type==='cycle'?'sel':''}">Cycle</button>
+        <button data-v="weekly" class="${sch.type==='weekly'?'sel':''}">Weekly</button>
+      </div></div>
+    <div id="schOpts"></div>
+
+    <div class="field" style="display:flex;justify-content:space-between;align-items:center">
+      <label style="margin:0">Injection — pick site <span style="font-weight:400;color:var(--muted)">(off = skip body map)</span></label>
+      <div class="seg" id="fInject" style="width:120px">
+        <button data-v="1" class="${isInject(it)?'sel':''}">On</button>
+        <button data-v="0" class="${!isInject(it)?'sel':''}">Off</button>
+      </div></div>
+
+    <div class="field" style="display:flex;justify-content:space-between;align-items:center">
+      <label style="margin:0">Track inventory</label>
+      <div class="seg" id="fTrack" style="width:120px">
+        <button data-v="1" class="${it.trackInv?'sel':''}">On</button>
+        <button data-v="0" class="${!it.trackInv?'sel':''}">Off</button>
+      </div></div>
+    <div id="invOpts"></div>
+
+    <button class="btn" id="fSave">${id?"Save changes":"Add item"}</button>
+    ${id?'<button class="btn danger" id="fDelete">Delete item</button>':''}
+    <button class="btn ghost" id="fCancel">Cancel</button>
+  `;
+
+  // local working copy of schedule + track state
+  let work = { type:sch.type, daysOn:sch.daysOn||5, daysOff:sch.daysOff||2,
+    startDate:sch.startDate||todayKey(new Date()), days:(sch.days||[1,2,3,4,5]).slice(),
+    track: !!it.trackInv, inject: isInject(it) };
+
+  function renderSched(){
+    const o=$("#schOpts");
+    if(work.type==="cycle"){
+      o.innerHTML=`<div class="row2">
+        <div class="field"><label>Days on</label><input id="cOn" type="number" inputmode="numeric" value="${work.daysOn}"></div>
+        <div class="field"><label>Days off</label><input id="cOff" type="number" inputmode="numeric" value="${work.daysOff}"></div>
+      </div>
+      <div class="field"><label>Cycle started</label><input id="cStart" type="date" value="${work.startDate}"></div>
+      <div class="hint">e.g. 5 on / 2 off repeats from the start date.</div>`;
+      $("#cOn").oninput=e=>work.daysOn=e.target.value;
+      $("#cOff").oninput=e=>work.daysOff=e.target.value;
+      $("#cStart").oninput=e=>work.startDate=e.target.value;
+    } else if(work.type==="weekly"){
+      const dn=["S","M","T","W","T","F","S"];
+      o.innerHTML=`<div class="field"><label>Days of week</label>
+        <div class="chips" id="wkDays">${dn.map((d,i)=>`<button data-d="${i}" class="${work.days.includes(i)?'sel':''}">${d}</button>`).join("")}</div></div>`;
+      $("#wkDays").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+        const d=+b.dataset.d; const i=work.days.indexOf(d);
+        if(i>=0)work.days.splice(i,1); else work.days.push(d);
+        b.classList.toggle("sel");
+      });
+    } else o.innerHTML="";
+  }
+  function renderInv(){
+    $("#invOpts").innerHTML = work.track ? `<div class="row2">
+        <div class="field"><label>Doses on hand</label><input id="iLeft" type="number" inputmode="numeric" value="${it.dosesLeft||0}"></div>
+        <div class="field"><label>Warn at</label><input id="iLow" type="number" inputmode="numeric" value="${it.lowAt||5}"></div>
+      </div><div class="hint">Each logged dose subtracts 1. Restock from the Inventory tab.</div>` : "";
+  }
+  function curDose(){ return { amt:parseFloat($("#fAmt").value), unit:$("#fUnit").value,
+    vial:parseFloat($("#fVial").value), bac:parseFloat($("#fBac").value) }; }
+  function doseString(d, calc){
+    if(!d.amt && d.amt!==0) return "";
+    let s = `${+d.amt} ${d.unit}`;
+    if(calc && (d.unit==="mg"||d.unit==="mcg"||d.unit==="units")) s += ` · draw ${calc.units.toFixed(1)} u`;
+    return s;
+  }
+  function renderDose(){
+    const type=$("#fType").querySelector(".sel").dataset.v, isPep=type==="peptide";
+    $("#fRouteWrap").style.display = isPep ? "" : "none";
+    const d=curDose(), needsRecon=isPep && (d.unit==="mg"||d.unit==="mcg");
+    $("#fRecon").style.display = needsRecon ? "" : "none";
+    const calc=isPep ? drawCalc(d.amt,d.unit,d.vial,d.bac) : null;
+    let html="";
+    if(calc){
+      html+=`<div style="color:var(--accent);font-weight:700;font-size:16px">Draw ${calc.units.toFixed(1)} u`;
+      if(calc.ml!=null) html+=` <span style="color:var(--muted);font-weight:400;font-size:12px">= ${calc.ml.toFixed(3)} ml</span>`;
+      html+=`</div>`;
+      if(calc.mgPerMl!=null) html+=`<div style="color:var(--muted);font-size:12px">Concentration ${calc.mgPerMl.toFixed(2)} mg/ml</div>`;
+    } else if(d.amt && needsRecon){
+      html+=`<div style="color:var(--muted)">Enter vial mg + BAC ml to calculate units to draw.</div>`;
+    }
+    const ref=refFor($("#fName").value);
+    if(ref && d.amt && needsRecon){
+      let dv=d.amt; if(d.unit!==ref.unit){ if(d.unit==="mcg"&&ref.unit==="mg")dv=d.amt/1000; else if(d.unit==="mg"&&ref.unit==="mcg")dv=d.amt*1000; }
+      let status,col;
+      if(dv<ref.lo){status="below reference";col="var(--amber)";}
+      else if(dv>ref.hi){status="above reference";col="var(--red)";}
+      else {status="within reference";col="var(--green)";}
+      html+=`<div style="margin-top:6px;font-size:12px"><span style="color:var(--muted)">Ref: ${ref.lo}–${ref.hi} ${ref.unit} · ${ref.freq}</span> · <b style="color:${col}">${status}</b></div>`;
+    } else if(ref){
+      html+=`<div style="margin-top:6px;font-size:12px;color:var(--muted)">Ref: ${ref.lo}–${ref.hi} ${ref.unit} · ${ref.freq}</div>`;
+    }
+    $("#fDoseOut").innerHTML=html;
+    if(d.amt){ $("#fDose").value=doseString(d,calc); $("#fDoseManual").textContent=""; }
+    else { const cur=$("#fDose").value; $("#fDoseManual").textContent = cur ? ("Current: "+cur+" — enter an amount above to replace.") : ""; }
+  }
+
+  renderSched(); renderInv(); renderDose();
+
+  seg("#fType", v=>{ renderDose(); });
+  seg("#fRoute", v=>{});
+  seg("#fSchedType", v=>{ work.type=v; renderSched(); });
+  seg("#fInject", v=>{ work.inject = v==="1"; });
+  ["fAmt","fVial","fBac"].forEach(idn=>$("#"+idn).oninput=renderDose);
+  $("#fUnit").onchange=renderDose;
+  $("#fName").addEventListener("input", renderDose);
+  $("#fTrack").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    $("#fTrack").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel"); work.track=b.dataset.v==="1"; renderInv();
+  });
+  // multi-select slots
+  $("#fSlots").querySelectorAll("button").forEach(b=>b.onclick=()=>b.classList.toggle("sel"));
+
+  $("#fSave").onclick=()=>{
+    const name=$("#fName").value.trim(); if(!name){$("#fName").focus();return;}
+    const type=$("#fType").querySelector(".sel").dataset.v;
+    const slots=[...$("#fSlots").querySelectorAll(".sel")].map(b=>b.dataset.v);
+    const schedule={type:work.type};
+    if(work.type==="cycle"){schedule.daysOn=+work.daysOn||1;schedule.daysOff=+work.daysOff||0;schedule.startDate=work.startDate;}
+    if(work.type==="weekly")schedule.days=work.days.slice().sort();
+    const rec = id ? state.items.find(i=>i.id===id) : {id:uid(),color:it.color};
+    const d=curDose(), calc=drawCalc(d.amt,d.unit,d.vial,d.bac);
+    rec.name=name; rec.type=type; rec.mfr=$("#fMfr").value.trim();
+    rec.route = ($("#fRoute").querySelector(".sel")||{}).dataset?.v || "SubQ";
+    if(d.amt){ rec.doseAmt=d.amt; rec.doseUnit=d.unit;
+      rec.vialMg=isNaN(d.vial)?undefined:d.vial; rec.bacMl=isNaN(d.bac)?undefined:d.bac;
+      rec.dose=doseString(d,calc); }
+    else { rec.dose=$("#fDose").value.trim(); rec.doseAmt=undefined; }
+    rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track; rec.inject=work.inject;
+    if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
+      rec.capacity=Math.max(rec.capacity||0, rec.dosesLeft); }
+    if(!id) state.items.push(rec);
+    save(); closeSheet(); render();
+  };
+  if(id) $("#fDelete").onclick=()=>{
+    if(confirm("Delete this item? Past logs stay in history."))
+    { state.items=state.items.filter(i=>i.id!==id); save(); closeSheet(); render(); }
+  };
+  $("#fCancel").onclick=closeSheet;
+  $("#scrim").classList.add("open");
+}
+function seg(sel, cb){ const c=$(sel); c.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  c.querySelectorAll("button").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); cb(b.dataset.v); }); }
+function closeSheet(){ $("#scrim").classList.remove("open"); $("#sheet").innerHTML=""; }
+$("#scrim").onclick=e=>{ if(e.target.id==="scrim") closeSheet(); };
+
+/* ---------- helpers ---------- */
+function scheduleLabel(s){ s=s||{type:"daily"};
+  if(s.type==="daily")return "Daily";
+  if(s.type==="cycle")return `${s.daysOn||0} on / ${s.daysOff||0} off`;
+  if(s.type==="weekly"){const dn=["Su","Mo","Tu","We","Th","Fr","Sa"];
+    return (s.days||[]).map(d=>dn[d]).join(", ")||"Weekly";}
+  return "Daily"; }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function emptyState(icon,title,body){
+  return `<div class="empty"><div class="big">${icon}</div><b>${title}</b><p>${body}</p></div>`; }
+
+/* ---------- library ---------- */
+function renderLibrary(){
+  $("#libTabs").querySelectorAll("button").forEach(b=>b.classList.toggle("sel", b.dataset.v===libKind));
+  $("#libHeading").textContent = libKind==="peptide" ? "Peptide library" : "Supplement library";
+  const list=$("#libList");
+  const entries = state.library.filter(p=>(p.kind||"peptide")===libKind);
+  const addLabel = libKind==="peptide" ? "+ Add peptide" : "+ Add supplement";
+  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 12px">${addLabel}</button>` +
+    (entries.length===0 ? emptyState("📖",`No ${libKind}s yet`,`Tap “${addLabel}” to add a ${libKind} reference.`) :
+    entries.map(p=>`
+    <div class="card" style="padding:14px">
+      <div class="card-head" style="align-items:flex-start">
+        <div class="swatch" style="background:${p.col||'#7B6FE8'};align-self:stretch"></div>
+        <div class="item-body">
+          <div class="item-name" style="white-space:normal">${esc(p.name)}
+            ${p.tag?`<span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(p.tag)}</span>`:''}</div>
+          ${p.desc?`<div style="font-size:13px;color:#3d3b37;margin-top:6px;line-height:1.5">${esc(p.desc)}</div>`:''}
+          ${p.does?`<div style="font-size:13px;color:#3d3b37;margin-top:8px;line-height:1.5"><b style="color:var(--text)">Used for:</b> ${esc(p.does)}</div>`:''}
+          ${p.dose?`<div style="font-size:13px;color:#3d3b37;margin-top:8px;line-height:1.5"><b style="color:var(--accent)">Typical dose:</b> ${esc(p.dose)}</div>`:''}
+          ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
+          <div style="margin-top:10px">
+            <button class="mini-btn" data-libadd="${p.id}">+ Add to protocol</button>
+            <button class="mini-btn" data-libedit="${p.id}" style="margin-left:8px">Edit</button>
+            <button class="mini-btn" data-libdel="${p.id}" style="color:var(--red);margin-left:8px">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join(""));
+  $("#libAdd").onclick=()=>openLibEditor(null);
+  list.querySelectorAll("[data-libadd]").forEach(el=>el.onclick=()=>{
+    const p=state.library.find(x=>x.id===el.dataset.libadd);
+    openEditor(null, {name:p.name, type:(p.kind||"peptide")});
+  });
+  list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
+  list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
+    const p=state.library.find(x=>x.id===el.dataset.libdel);
+    if(confirm(`Remove "${p.name}" from the library?`)){
+      state.library=state.library.filter(x=>x.id!==p.id); save(); render();
+    }
+  });
+}
+function openLibEditor(id){
+  const p = id ? state.library.find(x=>x.id===id) : {col:COLORS[state.library.length%COLORS.length], kind:libKind};
+  const kind = p.kind || "peptide";
+  const F=(label,key,ph,area)=>area
+    ? `<div class="field"><label>${label}</label><textarea id="lf_${key}" rows="2" placeholder="${ph}">${esc(p[key]||'')}</textarea></div>`
+    : `<div class="field"><label>${label}</label><input id="lf_${key}" placeholder="${ph}" value="${esc(p[key]||'')}"></div>`;
+  $("#sheet").innerHTML = `
+    <h2>${id?"Edit reference":"Add to library"}</h2>
+    <div class="field"><label>Type</label>
+      <div class="seg" id="lfKind">
+        <button data-v="peptide" class="${kind==='peptide'?'sel':''}">Peptide</button>
+        <button data-v="supplement" class="${kind==='supplement'?'sel':''}">Supplement</button>
+      </div></div>
+    ${F("Name","name","e.g. BPC-157")}
+    ${F("Category / tag","tag","e.g. Healing / repair")}
+    ${F("What it is","desc","Short description",true)}
+    ${F("Used for","does","What it does / benefits",true)}
+    ${F("Typical dose","dose","e.g. 250–500 mcg/day SubQ",true)}
+    <div class="row2">
+      ${F("Half-life","half","e.g. ~4 hrs")}
+      ${F("Duration","duration","e.g. 6–8 hrs")}
+    </div>
+    <button class="btn" id="lfSave">${id?"Save changes":"Add to library"}</button>
+    ${id?'<button class="btn danger" id="lfDelete">Remove from library</button>':''}
+    <button class="btn ghost" id="lfCancel">Cancel</button>`;
+  let lfKind = kind;
+  seg("#lfKind", v=>{ lfKind=v; });
+  $("#lfSave").onclick=()=>{
+    const name=$("#lf_name").value.trim(); if(!name){$("#lf_name").focus();return;}
+    const rec = id ? state.library.find(x=>x.id===id) : {id:uid(), col:p.col};
+    ["name","tag","desc","does","dose","half","duration"].forEach(k=>rec[k]=$("#lf_"+k).value.trim());
+    rec.kind = lfKind;
+    if(!id) state.library.push(rec);
+    libKind = lfKind;
+    save(); closeSheet(); render();
+  };
+  if(id) $("#lfDelete").onclick=()=>{
+    if(confirm(`Remove "${p.name}" from the library?`))
+    { state.library=state.library.filter(x=>x.id!==id); save(); closeSheet(); render(); }
+  };
+  $("#lfCancel").onclick=closeSheet;
+  $("#scrim").classList.add("open");
+}
+let rcMode = "inject";
+function calcRecon(){
+  const vial=parseFloat($("#rcVial").value), bac=parseFloat($("#rcBac").value);
+  if(!vial||!bac){ alert("Enter the vial size and BAC water."); return; }
+  const concMgMl=vial/bac, concMcgMl=concMgMl*1000;
+  if(rcMode==="nasal"){
+    const sprayMl=parseFloat($("#rcSpray").value)||0.1;
+    const mcgPerSpray=concMcgMl*sprayMl, sprays=bac/sprayMl;
+    $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
+    $("#rcUnits").textContent=`${Math.round(mcgPerSpray)} mcg / spray`;
+    $("#rcMl").textContent=`≈ ${Math.floor(sprays)} sprays per vial · ${sprayMl} ml/spray`;
+  } else {
+    const dose=parseFloat($("#rcDose").value);
+    if(!dose){ alert("Enter the desired dose."); return; }
+    const mlNeeded=dose/concMcgMl, unitsNeeded=mlNeeded*100;
+    $("#rcConc").textContent=`Concentration: ${concMgMl.toFixed(2)} mg/ml (${concMcgMl.toFixed(0)} mcg/ml)`;
+    $("#rcUnits").textContent=`${unitsNeeded.toFixed(1)} units`;
+    $("#rcMl").textContent=`= ${mlNeeded.toFixed(3)} ml on a 1cc (100-unit) syringe`;
+  }
+  $("#rcResult").classList.remove("hidden");
+}
+
+/* ---------- settings ---------- */
+function setRow(icon, label, right, attr){
+  return `<button class="set-row" ${attr||""}>
+    <svg class="sic" viewBox="0 0 24 24">${icon}</svg>
+    <span class="lbl">${label}</span>${right||""}</button>`;
+}
+function sw(on){ return `<span class="sw ${on?'on':''}"><i></i></span>`; }
+function renderSettings(){
+  const p = state.profile||{}, s = state.settings;
+  const initial = (p.name||"S").trim().charAt(0).toUpperCase();
+  const unit = p.units==="metric"?"kg":"lb";
+  const ICON={
+    bell:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    ruler:'<path d="M3 8l13 13 5-5L8 3z"/><path d="M8 8l2 2M12 6l2 2M6 12l2 2"/>',
+    syringe:'<path d="M18 2l4 4M17 7l-1.5-1.5M21 3l-9 9-4 1-1 4-4 4 2 2 4-4 4-1 1-4 9-9"/>',
+    play:'<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>',
+    download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+    shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  };
+  $("#setList").innerHTML = `
+    <button class="set-profile" data-act="profile" style="width:100%;text-align:left">
+      <span class="set-av">${p.avatar?`<img src="${p.avatar}">`:initial}</span>
+      <span style="flex:1"><span style="font-size:19px;font-weight:700;display:block">${esc(p.name||"Your profile")}</span>
+        <span style="color:var(--muted);font-size:13px">${p.email?esc(p.email):"On-device profile · tap to edit"}</span></span>
+      <span class="chev">›</span>
+    </button>
+
+    <div class="set-grp">Profile</div>
+    <div class="set-card">
+      ${setRow(ICON.bell,"Reminders", sw(!!s.reminders), 'data-act="reminders"')}
+    </div>
+
+    <div class="set-grp">Preferences</div>
+    <div class="set-card">
+      ${setRow(ICON.syringe,"Track injection sites", sw(s.trackSites!==false), 'data-act="trackSites"')}
+      ${setRow(ICON.play,"Replay intro tour", '<span class="chev">›</span>', 'data-act="intro"')}
+    </div>
+
+    <div class="set-grp">Data</div>
+    <div class="set-card">
+      ${setRow(ICON.download,"Export my data", '<span class="chev">›</span>', 'data-act="export"')}
+      ${setRow(ICON.trash,'<span style="color:var(--red)">Clear all data</span>', "", 'data-act="clear"')}
+    </div>
+
+    <div class="set-grp">About</div>
+    <div class="set-card">
+      ${setRow(ICON.shield,"Disclaimer & notices", '<span class="chev">›</span>', 'data-act="disclaimer"')}
+    </div>
+    <div class="set-foot">Stack · v1.0 · all data stored on this device</div>`;
+
+  $("#setList").querySelectorAll("[data-act]").forEach(el=>el.onclick=()=>settingsAction(el.dataset.act, el));
+}
+function settingsAction(act, el){
+  const s=state.settings;
+  if(act==="reminders"){
+    s.reminders=!s.reminders;
+    if(s.reminders){ try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){} }
+    save(); renderSettings();
+  } else if(act==="trackSites"){
+    s.trackSites = s.trackSites===false ? true : false;
+    save(); renderSettings();
+  } else if(act==="profile"){ openProfileEditor(); }
+  else if(act==="intro"){ startOnboarding(); }
+  else if(act==="disclaimer"){ $("#disclaimer").classList.add("open"); }
+  else if(act==="export"){ exportData(); }
+  else if(act==="clear"){
+    if(confirm("Erase ALL Stack data on this device — protocol, logs, journal, profile, and library customizations? This cannot be undone.")){
+      localStorage.removeItem(KEY); location.reload();
+    }
+  }
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`stack-backup-${todayKey(new Date())}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function openProfileEditor(){
+  const p=state.profile=state.profile||{};
+  const initial=(p.name||"S").trim().charAt(0).toUpperCase();
+  let avatarData=p.avatar||null;
+  $("#sheet").innerHTML=`
+    <h2>Account</h2>
+    <div class="field"><label>Profile picture</label>
+      <div style="display:flex;align-items:center;gap:14px">
+        <span class="set-av" id="pfAvatar">${avatarData?`<img src="${avatarData}">`:initial}</span>
+        <label class="btn ghost" style="margin:0;width:auto;padding:11px 18px;cursor:pointer">Change picture
+          <input id="pfPic" type="file" accept="image/*" class="hidden"></label>
+      </div>
+      <div class="hint">JPG, PNG or GIF — stored on your device.</div>
+    </div>
+    <div class="field"><label>Full name</label><input id="pfName" value="${esc(p.name||"")}" placeholder="Your name"></div>
+    <div class="field"><label>Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+      <input id="pfEmail" type="email" value="${esc(p.email||"")}" placeholder="you@email.com">
+      <div class="hint">Stored locally only — no account, not verified.</div></div>
+    <button class="btn" id="pfSave">Save</button>
+    <button class="btn ghost" id="pfCancel">Cancel</button>`;
+  $("#pfPic").onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ const img=new Image(); img.onload=()=>{
+        const sz=256, scale=Math.min(sz/img.width, sz/img.height, 1);
+        const c=document.createElement("canvas"); c.width=img.width*scale; c.height=img.height*scale;
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        avatarData=c.toDataURL("image/jpeg",0.85);
+        $("#pfAvatar").innerHTML=`<img src="${avatarData}">`;
+      }; img.src=r.result; };
+    r.readAsDataURL(f);
+  };
+  $("#pfSave").onclick=()=>{
+    p.name=$("#pfName").value.trim(); p.email=$("#pfEmail").value.trim(); p.avatar=avatarData;
+    save(); closeSheet(); render();
+  };
+  $("#pfCancel").onclick=closeSheet;
+  $("#scrim").classList.add("open");
+}
+
+/* ---------- navigation ---------- */
+function render(){
+  renderHeader();
+  if(curTab==="today")renderToday();
+  else if(curTab==="protocol")renderProtocol();
+  else if(curTab==="library")renderLibrary();
+  else if(curTab==="settings")renderSettings();
+}
+function switchTab(t){
+  curTab=t;
+  document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+t));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
+  $("#fab").classList.toggle("hidden", t!=="protocol");
+  $("#dateNav").style.visibility = (t==="library"||t==="settings")?"hidden":"visible";
+  render();
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+$("#fab").onclick=()=>openEditor(null);
+$("#prevDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()-1); render(); };
+$("#nextDay").onclick=()=>{ viewDate.setDate(viewDate.getDate()+1); render(); };
+$("#todayBtn").onclick=()=>{ viewDate=new Date(); viewDate.setHours(0,0,0,0); render(); };
+$("#rcCalc").onclick=calcRecon;
+seg("#rcMode", v=>{ rcMode=v;
+  $("#rcInjField").classList.toggle("hidden", v!=="inject");
+  $("#rcNasalField").classList.toggle("hidden", v!=="nasal");
+  $("#rcResult").classList.add("hidden");
+});
+$("#replayIntro").onclick=startOnboarding;
+seg("#libTabs", v=>{ libKind=v; renderLibrary(); });
+// mood / sleep / energy ratings — tap to set (tap again to clear), auto-saved
+document.querySelectorAll(".rate-btns").forEach(row=>{
+  const m=row.dataset.metric;
+  row.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const cur=journalToday()[m], val=+b.dataset.v;
+    const next = cur===val ? null : val;
+    setMetric(m, next);
+    row.querySelectorAll("button").forEach(x=>x.classList.toggle("sel", +x.dataset.v===next));
+  });
+});
+// numeric + note fields — auto-save on input (no re-render, keeps focus)
+$("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
+$("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.target.value):null); $("#weightChart").innerHTML=buildWeightChart(); };
+$("#jNote").oninput=e=>setMetric("note", e.target.value);
+
+// first-launch disclaimer
+$("#dscAccept").onclick=()=>{
+  if($("#dscHide").checked){ state.hideDisclaimer=true; save(); }
+  $("#disclaimer").classList.remove("open");
+};
+function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
+
+/* ---------- onboarding (bright, multi-step) ---------- */
+const OB_STEPS = ["welcome","goal","achieve","challenges","statement","dosing","system","progress","reminders","privacy","makeyours","name","metrics","source","features","setup","ready"];
+let obIdx = 0;
+const prof = state.profile = state.profile || {};
+function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
+function obNext(){ if(obIdx<OB_STEPS.length-1){ obIdx++; renderOb(); } else finishOb(); }
+function obBack(){ if(obIdx>0){ obIdx--; renderOb(); } }
+function finishOb(){ state.profile=prof; state.onboarded=true;
+  if(prof.weight && journalToday().weight==null){ journalToday().weight=prof.weight; }
+  save(); $("#onboard").classList.remove("open"); render(); maybeDisclaimer();
+}
+function obFoot(label, enabled, skip){
+  return `<button class="ob-btn" id="obCont" ${enabled===false?"disabled":""}>${label||"Continue"}</button>
+    ${skip?`<button class="ob-skip" id="obSkip">Skip</button>`:""}`;
+}
+function renderOb(){
+  $("#obBar").style.width = ((obIdx+1)/OB_STEPS.length*100)+"%";
+  $("#obBack").style.visibility = obIdx>0 ? "visible" : "hidden";
+  const step=OB_STEPS[obIdx], body=$("#obBody"), foot=$("#obFoot");
+  body.className="ob-body"; let html="", footHtml="";
+
+  if(step==="welcome"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand" style="font-size:48px;letter-spacing:-1.5px;margin-bottom:26px">Stack</div>
+      <h2>Track what you take — and what actually works</h2>
+      <p class="sub">Stack keeps your doses, assessments, and progress in one place, so you can see what's moving the needle.</p>`;
+    footHtml=obFoot("Get started");
+  }
+  else if(step==="goal"){
+    const opts=[
+      ["peptides","I'm on peptides or other compounds","MOTS-c, Tesamorelin, NAD+"],
+      ["glp1","I'm on a GLP-1","Retatrutide, Tirzepatide, Semaglutide"],
+      ["trt","I'm on TRT or similar","Testosterone, performance protocols"],
+      ["stack","I manage a full stack","Multiple compounds together"],
+    ];
+    html=`<h2>What's in your stack?</h2><p class="sub">We'll tailor Stack around you.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.goal===o[0]?'sel':''}" data-goal="${o[0]}">
+        <span><b>${o[1]}</b><p>${o[2]}</p></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", !!prof.goal);
+  }
+  else if(step==="achieve"){
+    const opts=["Lose weight","Build muscle","Body recomposition","More energy","Better sleep","Recover faster","Sharper focus","Longevity & anti-aging","Healthier hair, skin & joints"];
+    prof.achieve=prof.achieve||[];
+    html=`<h2>What are you hoping to achieve?</h2><p class="sub">Pick everything that fits.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.achieve.includes(o)?'sel':''}" data-multi="achieve" data-val="${esc(o)}"><span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="challenges"){
+    const opts=["Remembering doses on time","Managing multiple compounds","Knowing what's working","Tracking my labs and metrics","Reconstitution math","Seeing real progress","Staying motivated through it"];
+    prof.challenges=prof.challenges||[];
+    html=`<h2>What have been the biggest challenges?</h2><p class="sub">We'll show how Stack makes each one easier.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.challenges.includes(o)?'sel':''}" data-multi="challenges" data-val="${esc(o)}"><span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="statement"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand" style="margin-bottom:28px">Stack</div>
+      <h2 style="font-size:28px">Everything in one place — doses, assessments, results — so you can finally tell what's making the difference.</h2>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="dosing"){
+    html=`<h2>We'll keep you on track with your dosing</h2><p class="sub">Daily, every X days, twice a week, on/off cycles. Set it once and Stack handles the rest.</p>
+      <div class="ob-mock">
+        <div class="ob-mhead"><b>Today</b><span>Mon, May 5</span></div>
+        <div class="ob-msec">MORNING</div>
+        <div class="ob-mrow"><span class="nm">Retatrutide</span><span class="ds">5 mg</span><span class="tm">8:00 AM</span><span class="chk">✓</span></div>
+        <div class="ob-mrow"><span class="nm">BPC-157</span><span class="ds">250 mcg</span><span class="tm">8:00 AM</span><span class="chk">✓</span></div>
+        <div class="ob-msec">EVENING</div>
+        <div class="ob-mrow"><span class="nm">Testosterone</span><span class="ds">100 mg</span><span class="tm">9:00 PM</span><span class="chk">✓</span></div>
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="system"){
+    html=`<h2>We'll show you what's in your system</h2><p class="sub">Estimated levels based on your dose, timing, and pharmacokinetics.</p>
+      <div class="ob-mock">
+        <div class="ob-mtop">
+          <div><div class="ob-mtitle">Retatrutide</div><div class="ob-msub">2.5 mg · weekly</div></div>
+          <div style="text-align:right"><div class="ob-msub">NOW</div><div class="ob-mbig">3.2 mg</div></div>
+        </div>
+        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
+          <defs><linearGradient id="pkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".45"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64 L300 140 L8 140 Z" fill="url(#pkg)"/>
+          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="ob-mx"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span></div>
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="progress"){
+    html=`<h2>We'll watch your progress unfold</h2><p class="sub">Weight, body comp, labs, and daily assessments — all on one timeline.</p>
+      <div class="ob-mock">
+        <div class="ob-mtop">
+          <div><div class="ob-msub">BODY WEIGHT</div><div class="ob-mbig" style="color:#fff">213 <span style="font-size:14px;color:#9aa0a6;font-weight:600">lbs</span></div></div>
+          <div style="text-align:right"><span class="ob-mpill">−18.6 lbs</span><div class="ob-msub" style="margin-top:6px">12 weeks</div></div>
+        </div>
+        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
+          <defs><linearGradient id="wgo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".4"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130 L310 140 L10 140 Z" fill="url(#wgo)"/>
+          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div class="ob-mx"><span>Week 1</span><span>Week 6</span><span>Week 12</span></div>
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="privacy"){
+    html=`<h2>Your data stays yours</h2><p class="sub">Health data is sensitive — here's how Stack handles it.</p>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div><b>On your device only</b><p>Stored locally in your browser — no accounts, no server.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg></div>
+        <div><b>Never sold</b><p>Your data is never sold or shared. Ever.</p></div></div>
+      <div class="ob-feat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div>
+        <div><b>Delete anytime</b><p>Clear everything from your device in one tap.</p></div></div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="makeyours"){
+    body.className="ob-body center";
+    html=`<h2 style="font-size:34px">Let's dial this in</h2>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="name"){
+    html=`<h2>What should we call you?</h2><p class="sub">We'll use this to personalize your protocol.</p>
+      <p class="ob-lab">First name</p>
+      <input class="ob-input" id="obName" placeholder="Your name" value="${esc(prof.name||"")}">`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="metrics"){
+    const u=prof.units||"imperial";
+    html=`<h2>Personalize your metrics</h2><p class="sub">Your numbers help calibrate goal tracking.</p>
+      <div class="ob-seg" id="obUnits">
+        <button data-u="imperial" class="${u==='imperial'?'sel':''}">Imperial</button>
+        <button data-u="metric" class="${u==='metric'?'sel':''}">Metric</button>
+      </div>
+      <div id="obMetricFields"></div>
+      <div class="ob-note" id="obToGo"></div>`;
+    footHtml=obFoot("Continue", true, true);
+  }
+  else if(step==="reminders"){
+    const ri = state.items[0];
+    const notifMsg = ri ? `Time for ${esc(ri.name)}${ri.dose?" · "+esc(ri.dose.split("·")[0].trim()):""}` : "Time for your next dose";
+    html=`<h2>Stay on top of your schedule</h2><p class="sub">We'll nudge you when a dose is due. Customize the timing or turn it off anytime.</p>
+      <div class="ob-notif"><div class="nic">🔔</div>
+        <div><b>Stack</b><p>${notifMsg}</p></div></div>`;
+    footHtml=`<button class="ob-btn acc" id="obRemOn">🔔  Enable reminders</button>
+      <button class="ob-skip" id="obSkip">Maybe later</button>`;
+  }
+  else if(step==="source"){
+    const opts=["App Store / Play Store","Google","AI (ChatGPT, etc.)","Instagram","TikTok","Reddit","Friend or family"];
+    html=`<h2>How'd you find us?</h2><p class="sub">Optional — helps us understand what's working.</p>
+      ${opts.map(o=>`<button class="ob-opt ${prof.source===o?'sel':''}" data-src="${esc(o)}">
+        <span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
+    footHtml=obFoot("Continue", !!prof.source, true);
+  }
+  else if(step==="features"){
+    const feats=[
+      ["Track unlimited compounds","Peptides &amp; supplements, no limit"],
+      ["Daily assessments","Mood, energy, sleep, weight & notes"],
+      ["Progress trends","Body-weight chart with your goal line"],
+      ["Reconstitution & draws","Auto units-to-draw from your vials"],
+      ["Inventory tracking","Doses left + low-stock warnings"],
+      ["Reference library","Peptide & supplement info, your way"],
+    ];
+    html=`<h2>Everything Stack does</h2><p class="sub">All on your device — free, no accounts.</p>
+      <div class="ob-card ob-list">
+        ${feats.map(f=>`<div class="li"><span class="ck">✓</span><div><b>${f[0]}</b><p style="color:var(--omut)">${f[1]}</p></div></div>`).join("")}
+      </div>`;
+    footHtml=obFoot("Continue");
+  }
+  else if(step==="setup"){
+    body.className="ob-body center";
+    html=`<div class="ob-brand" style="margin-bottom:14px">Stack</div>
+      <h2>Build your stack</h2>
+      <p class="sub">Add your compounds anytime from the Protocol tab — tap the <b>+</b> to add a peptide or supplement, or pull from the Library.</p>`;
+    footHtml=`<button class="ob-btn" id="obLater">Continue</button>`;
+  }
+  else if(step==="ready"){
+    body.className="ob-body center";
+    const item = state.items[0];
+    const steps = item
+      ? ["Generating your reminders","Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
+      : ["Setting up your space","Personalizing your dashboard","Getting things ready"];
+    html=`<h2>${prof.name?"You're ready, "+esc(prof.name):"You're ready"}</h2>
+      <p class="sub">${item?"Your protocol is calibrated and waiting.":"Add your first compound from the Protocol tab whenever you're ready."}</p>
+      ${item?`<div class="ob-pill"><span style="opacity:.6">●</span> ${esc(item.name)}${item.dose?" · "+esc(item.dose.split("·")[0].trim()):""}</div>`:""}
+      <div style="text-align:left;max-width:300px;margin:6px auto 0">
+        ${steps.map((t,i)=>`<div class="ob-rdy" data-rdy="${i}"><span class="ck">✓</span><span>${t}</span></div>`).join("")}
+      </div>`;
+    footHtml=`<button class="ob-btn" id="obEnter" disabled>Enter Stack</button>`;
+  }
+
+  body.innerHTML=html; foot.innerHTML=footHtml;
+
+  // wiring
+  if(step==="goal"){
+    body.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{ prof.goal=b.dataset.goal; renderOb(); });
+  }
+  if(step==="source"){
+    body.querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>{ prof.source=b.dataset.src; renderOb(); });
+  }
+  body.querySelectorAll("[data-multi]").forEach(b=>b.onclick=()=>{
+    const key=b.dataset.multi, val=b.dataset.val;
+    prof[key]=prof[key]||[];
+    const i=prof[key].indexOf(val);
+    if(i>=0) prof[key].splice(i,1); else prof[key].push(val);
+    b.classList.toggle("sel");
+  });
+  if(step==="metrics") renderMetricFields();
+  const cont=$("#obCont"); if(cont) cont.onclick=()=>{
+    if(step==="name"){ prof.name=$("#obName").value.trim(); }
+    obNext();
+  };
+  const skip=$("#obSkip"); if(skip) skip.onclick=obNext;
+  const remOn=$("#obRemOn"); if(remOn) remOn.onclick=()=>{
+    prof.reminders=true;
+    try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
+    obNext();
+  };
+  const later=$("#obLater"); if(later) later.onclick=obNext;
+  if(step==="ready"){
+    const rows=[...body.querySelectorAll(".ob-rdy")];
+    rows.forEach((r,i)=>setTimeout(()=>r.classList.add("on"), 250+i*320));
+    const enter=$("#obEnter");
+    setTimeout(()=>{ if(enter){ enter.disabled=false; } }, 250+rows.length*320+200);
+    if(enter) enter.onclick=finishOb;
+  }
+}
+function renderMetricFields(){
+  const u=prof.units||"imperial", wrap=$("#obMetricFields"); if(!wrap) return;
+  if(u==="imperial"){
+    wrap.innerHTML=`<div class="ob-grid2">
+        <div><p class="ob-lab">Height (ft)</p><input class="ob-input" id="mFt" type="number" inputmode="numeric" value="${prof.htFt??""}"></div>
+        <div><p class="ob-lab">Height (in)</p><input class="ob-input" id="mIn" type="number" inputmode="numeric" value="${prof.htIn??""}"></div>
+      </div>
+      <p class="ob-lab">Weight (lb)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Goal weight (lb)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}" style="margin-bottom:16px">
+      <div class="ob-grid2" style="margin-bottom:0">
+        <div><p class="ob-lab">Waist (in)</p><input class="ob-input" id="mWaist" type="number" inputmode="decimal" value="${prof.waist??""}"></div>
+        <div><p class="ob-lab">Waist goal (in)</p><input class="ob-input" id="mWaistGoal" type="number" inputmode="decimal" value="${prof.waistGoal??""}"></div>
+      </div>`;
+  } else {
+    wrap.innerHTML=`<p class="ob-lab">Height (cm)</p><input class="ob-input" id="mCm" type="number" inputmode="decimal" value="${prof.htCm??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Weight (kg)</p><input class="ob-input" id="mWt" type="number" inputmode="decimal" value="${prof.weight??""}" style="margin-bottom:16px">
+      <p class="ob-lab">Goal weight (kg)</p><input class="ob-input" id="mGoal" type="number" inputmode="decimal" value="${prof.goalWeight??""}" style="margin-bottom:16px">
+      <div class="ob-grid2" style="margin-bottom:0">
+        <div><p class="ob-lab">Waist (cm)</p><input class="ob-input" id="mWaist" type="number" inputmode="decimal" value="${prof.waist??""}"></div>
+        <div><p class="ob-lab">Waist goal (cm)</p><input class="ob-input" id="mWaistGoal" type="number" inputmode="decimal" value="${prof.waistGoal??""}"></div>
+      </div>`;
+  }
+  const readM=()=>{
+    prof.units=u;
+    if(u==="imperial"){ prof.htFt=numOrNull($("#mFt")); prof.htIn=numOrNull($("#mIn")); }
+    else prof.htCm=numOrNull($("#mCm"));
+    prof.weight=numOrNull($("#mWt")); prof.goalWeight=numOrNull($("#mGoal"));
+    prof.waist=numOrNull($("#mWaist")); prof.waistGoal=numOrNull($("#mWaistGoal"));
+    const unit=u==="imperial"?"lb":"kg", wu=u==="imperial"?"in":"cm";
+    const to=$("#obToGo"); const bits=[];
+    if(prof.weight!=null && prof.goalWeight!=null) bits.push(`${Math.abs(+(prof.weight-prof.goalWeight).toFixed(1))} ${unit}`);
+    if(prof.waist!=null && prof.waistGoal!=null) bits.push(`${Math.abs(+(prof.waist-prof.waistGoal).toFixed(1))} ${wu} waist`);
+    if(bits.length){ to.innerHTML=`<span class="dotr"></span><b>${bits.join(" · ")} to go</b> — we'll watch this with you.`; to.style.display=""; }
+    else to.style.display="none";
+  };
+  wrap.querySelectorAll("input").forEach(i=>i.oninput=readM);
+  $("#obUnits").querySelectorAll("button").forEach(b=>b.onclick=()=>{ prof.units=b.dataset.u; renderOb(); });
+  readM();
+}
+function numOrNull(el){ return el&&el.value!=="" ? parseFloat(el.value) : null; }
+$("#obBack").onclick=obBack;
+
+// DEV: while building, always show the intro on launch.
+// When the app is finished, set this to false (intro then shows only once).
+const ALWAYS_SHOW_INTRO = true;
+
+render();
+if(ALWAYS_SHOW_INTRO || !state.onboarded) startOnboarding(); else maybeDisclaimer();
+
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
