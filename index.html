@@ -1425,8 +1425,12 @@ function renderMetricFields(){
 function numOrNull(el){ return el&&el.value!=="" ? parseFloat(el.value) : null; }
 $("#obBack").onclick=obBack;
 
+// DEV: while building, always show the intro on launch.
+// When the app is finished, set this to false (intro then shows only once).
+const ALWAYS_SHOW_INTRO = true;
+
 render();
-if(!state.onboarded) startOnboarding(); else maybeDisclaimer();
+if(ALWAYS_SHOW_INTRO || !state.onboarded) startOnboarding(); else maybeDisclaimer();
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
