@@ -580,7 +580,9 @@ function drawCalc(amt, unit, vialMg, bacMl){
   return { units: ml*100, ml, mgPerMl };
 }
 
+const LIB_SEED_V = 2;
 let state = load();
+save();
 let viewDate = new Date(); viewDate.setHours(0,0,0,0);
 let curTab = "today";
 let libKind = "peptide";
@@ -591,6 +593,12 @@ function load(){
   if(!d || !d.items) d = { items: [], logs: {}, journal: {} };
   // seed the reference library on first run; afterwards it's user-editable
   if(!Array.isArray(d.library)) d.library = LIBRARY.map(p=>({id:uid(), ...p}));
+  // backfill any newly-added default library entries (once per seed version)
+  if(d.libSeedV !== LIB_SEED_V){
+    const have = new Set(d.library.map(p=>(p.name||"").toLowerCase()));
+    LIBRARY.forEach(p=>{ if(!have.has(p.name.toLowerCase())) d.library.push({id:uid(), ...p}); });
+    d.libSeedV = LIB_SEED_V;
+  }
   d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
   return d;
 }
