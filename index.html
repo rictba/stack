@@ -291,6 +291,7 @@
 <main>
   <!-- TODAY -->
   <section class="tab active" id="tab-today">
+    <div id="goalCard"></div>
     <div class="group-label">How are you feeling?</div>
     <div class="card" style="padding:6px 14px">
       <div class="rate-row"><span class="rate-label">Sleep</span>
@@ -313,7 +314,7 @@
       </div>
       <div class="j-field">
         <label>Morning weight</label>
-        <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit">lb / kg</span>
+        <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit" id="jWeightUnit">lb</span>
       </div>
     </div>
     <div id="weightChart"></div>
@@ -357,6 +358,12 @@
     <button class="btn ghost" id="replayIntro" style="margin-top:18px">Replay intro tour</button>
   </section>
 
+  <!-- INVENTORY -->
+  <section class="tab" id="tab-inventory">
+    <p class="tab-intro"><b>Inventory.</b> Doses remaining for items you're tracking. Restock when you reorder; each logged dose subtracts one.</p>
+    <div id="invList"></div>
+  </section>
+
   <!-- LIBRARY -->
   <section class="tab" id="tab-library">
     <p class="tab-intro"><b>Reference.</b> What each compound is, what it does, and recommended doses. Tap <b>+ Add to protocol</b> on anything you take.</p>
@@ -385,6 +392,10 @@
   <button data-tab="protocol">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>
     Protocol
+  </button>
+  <button data-tab="inventory">
+    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+    Inventory
   </button>
   <button data-tab="library">
     <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -724,6 +735,8 @@ function renderToday(){
   $("#jHours").value = j.hours ?? "";
   $("#jWeight").value = j.weight ?? "";
   $("#jNote").value = j.note ?? "";
+  $("#jWeightUnit").textContent = (state.profile && state.profile.units==="metric") ? "kg" : "lb";
+  $("#goalCard").innerHTML = buildGoalCard();
   $("#weightChart").innerHTML = buildWeightChart();
 
   // ---- protocol checklist ----
@@ -844,6 +857,33 @@ function restock(id){
   it.dosesLeft=(it.dosesLeft||0)+n;
   if((it.capacity||0) < it.dosesLeft) it.capacity=it.dosesLeft;
   save(); render();
+}
+
+/* ---------- today goal card ---------- */
+const GOAL_LABELS = { peptides:"On peptides / compounds", glp1:"On a GLP-1", trt:"On TRT or similar", stack:"Managing a full stack" };
+function buildGoalCard(){
+  const p = state.profile||{};
+  const focus = GOAL_LABELS[p.goal];
+  const aims = (p.achieve||[]).slice();
+  const wu = p.units==="metric" ? "kg" : "lb";
+  let target="";
+  if(p.goalWeight!=null){
+    const pts = Object.keys(state.journal).filter(k=>state.journal[k].weight!=null).sort();
+    const cur = pts.length ? +state.journal[pts[pts.length-1]].weight : (p.weight!=null ? +p.weight : null);
+    if(cur!=null){
+      const diff = +(cur - p.goalWeight).toFixed(1);
+      target = diff===0 ? `Goal reached · ${p.goalWeight} ${wu}`
+        : `${Math.abs(diff)} ${wu} to go · goal ${p.goalWeight} ${wu}`;
+    } else target = `Goal ${p.goalWeight} ${wu}`;
+  }
+  if(!focus && aims.length===0 && !target) return "";
+  return `<div class="card" style="padding:14px;margin-bottom:4px">
+    <div class="group-label" style="margin:0 0 8px">Your focus</div>
+    ${focus?`<div class="item-name" style="font-size:15px">${esc(focus)}</div>`:""}
+    ${target?`<div class="item-sub" style="color:var(--accent);margin-top:4px">🎯 ${esc(target)}</div>`:""}
+    ${aims.length?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+      ${aims.map(a=>`<span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(a)}</span>`).join("")}</div>`:""}
+  </div>`;
 }
 
 /* ---------- weight progress chart ---------- */
@@ -1255,6 +1295,7 @@ function renderSettings(){
     syringe:'<path d="M18 2l4 4M17 7l-1.5-1.5M21 3l-9 9-4 1-1 4-4 4 2 2 4-4 4-1 1-4 9-9"/>',
     play:'<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>',
     download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 8l5-5 5 5M12 3v12"/>',
     trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
     shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
     doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
@@ -1267,11 +1308,6 @@ function renderSettings(){
       <span class="chev">›</span>
     </button>
 
-    <div class="set-grp">Profile</div>
-    <div class="set-card">
-      ${setRow(ICON.bell,"Reminders", sw(!!s.reminders), 'data-act="reminders"')}
-    </div>
-
     <div class="set-grp">Preferences</div>
     <div class="set-card">
       ${setRow(ICON.syringe,"Track injection sites", sw(s.trackSites!==false), 'data-act="trackSites"')}
@@ -1281,6 +1317,7 @@ function renderSettings(){
     <div class="set-grp">Data</div>
     <div class="set-card">
       ${setRow(ICON.download,"Export my data", '<span class="chev">›</span>', 'data-act="export"')}
+      ${setRow(ICON.upload,"Import data", '<span class="chev">›</span>', 'data-act="import"')}
       ${setRow(ICON.trash,'<span style="color:var(--red)">Clear all data</span>', "", 'data-act="clear"')}
     </div>
 
@@ -1294,17 +1331,14 @@ function renderSettings(){
 }
 function settingsAction(act, el){
   const s=state.settings;
-  if(act==="reminders"){
-    s.reminders=!s.reminders;
-    if(s.reminders){ try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){} }
-    save(); renderSettings();
-  } else if(act==="trackSites"){
+  if(act==="trackSites"){
     s.trackSites = s.trackSites===false ? true : false;
     save(); renderSettings();
   } else if(act==="profile"){ openProfileEditor(); }
   else if(act==="intro"){ startOnboarding(); }
   else if(act==="disclaimer"){ $("#disclaimer").classList.add("open"); }
   else if(act==="export"){ exportData(); }
+  else if(act==="import"){ importData(); }
   else if(act==="clear"){
     if(confirm("Erase ALL Stack data on this device — protocol, logs, journal, profile, and library customizations? This cannot be undone.")){
       localStorage.removeItem(KEY); location.reload();
@@ -1318,6 +1352,23 @@ function exportData(){
   a.download=`stack-backup-${todayKey(new Date())}.json`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function importData(){
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept="application/json,.json";
+  inp.onchange=()=>{
+    const f=inp.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      let d; try{ d=JSON.parse(r.result); }catch(e){ alert("That file isn't valid Stack backup JSON."); return; }
+      if(!d || typeof d!=="object" || !Array.isArray(d.items)){ alert("That doesn't look like a Stack backup (no items found)."); return; }
+      if(!confirm("Import this backup? It will replace ALL current data on this device — protocol, logs, journal, profile, and library.")) return;
+      localStorage.setItem(KEY, JSON.stringify(d));
+      location.reload();
+    };
+    r.readAsText(f);
+  };
+  inp.click();
 }
 function openProfileEditor(){
   const p=state.profile=state.profile||{};
@@ -1364,6 +1415,7 @@ function render(){
   renderHeader();
   if(curTab==="today")renderToday();
   else if(curTab==="protocol")renderProtocol();
+  else if(curTab==="inventory")renderInventory();
   else if(curTab==="library")renderLibrary();
   else if(curTab==="settings")renderSettings();
 }
@@ -1372,7 +1424,7 @@ function switchTab(t){
   document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+t));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
   $("#fab").classList.toggle("hidden", t!=="protocol");
-  $("#dateNav").style.visibility = (t==="library"||t==="settings")?"hidden":"visible";
+  $("#dateNav").style.visibility = (t==="library"||t==="settings"||t==="inventory")?"hidden":"visible";
   render();
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
@@ -1411,7 +1463,7 @@ $("#dscAccept").onclick=()=>{
 function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
 
 /* ---------- onboarding (bright, multi-step) ---------- */
-const OB_STEPS = ["welcome","goal","achieve","challenges","statement","dosing","system","progress","reminders","privacy","makeyours","name","metrics","source","features","setup","ready"];
+const OB_STEPS = ["welcome","goal","achieve","challenges","statement","dosing","system","progress","privacy","makeyours","name","metrics","source","features","setup","ready"];
 let obIdx = 0;
 const prof = state.profile = state.profile || {};
 function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
@@ -1546,15 +1598,6 @@ function renderOb(){
       <div class="ob-note" id="obToGo"></div>`;
     footHtml=obFoot("Continue", true, true);
   }
-  else if(step==="reminders"){
-    const ri = state.items[0];
-    const notifMsg = ri ? `Time for ${esc(ri.name)}${ri.dose?" · "+esc(ri.dose.split("·")[0].trim()):""}` : "Time for your next dose";
-    html=`<h2>Stay on top of your schedule</h2><p class="sub">We'll nudge you when a dose is due. Customize the timing or turn it off anytime.</p>
-      <div class="ob-notif"><div class="nic">🔔</div>
-        <div><b>Stack</b><p>${notifMsg}</p></div></div>`;
-    footHtml=`<button class="ob-btn acc" id="obRemOn">🔔  Enable reminders</button>
-      <button class="ob-skip" id="obSkip">Maybe later</button>`;
-  }
   else if(step==="source"){
     const opts=["App Store / Play Store","Google","AI (ChatGPT, etc.)","Instagram","TikTok","Reddit","Friend or family"];
     html=`<h2>How'd you find us?</h2><p class="sub">Optional — helps us understand what's working.</p>
@@ -1588,7 +1631,7 @@ function renderOb(){
     body.className="ob-body center";
     const item = state.items[0];
     const steps = item
-      ? ["Generating your reminders","Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
+      ? ["Calibrating your protocol","Tailoring your insights","Personalizing your dashboard","Saving your protocol"]
       : ["Setting up your space","Personalizing your dashboard","Getting things ready"];
     html=`<h2>${prof.name?"You're ready, "+esc(prof.name):"You're ready"}</h2>
       <p class="sub">${item?"Your protocol is calibrated and waiting.":"Add your first compound from the Protocol tab whenever you're ready."}</p>
@@ -1621,11 +1664,6 @@ function renderOb(){
     obNext();
   };
   const skip=$("#obSkip"); if(skip) skip.onclick=obNext;
-  const remOn=$("#obRemOn"); if(remOn) remOn.onclick=()=>{
-    prof.reminders=true;
-    try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); }catch(e){}
-    obNext();
-  };
   const later=$("#obLater"); if(later) later.onclick=obNext;
   if(step==="ready"){
     const rows=[...body.querySelectorAll(".ob-rdy")];
