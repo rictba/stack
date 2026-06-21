@@ -776,7 +776,7 @@ function renderToday(){
     : "Log your weight & waist once a week.";
   $("#waistSummary").textContent = waistStat();
   $("#goalCard").innerHTML = buildGoalCard();
-  $("#weightChart").innerHTML = buildWeightChart();
+  renderTrends();
 
   // ---- protocol checklist ----
   const list = $("#todayList");
@@ -1184,17 +1184,18 @@ function buildGoalCard(){
 }
 
 /* ---------- weight progress chart ---------- */
-function buildWeightChart(){
-  const pts = Object.keys(state.journal)
-    .filter(k=>state.journal[k].weight!=null)
+function metricSeries(field){
+  return Object.keys(state.journal)
+    .filter(k=>state.journal[k][field]!=null)
     .sort()
-    .map(k=>({ d:new Date(k+"T00:00:00"), w:+state.journal[k].weight }));
-  const unit = (state.profile && state.profile.units==="metric") ? "kg" : "lb";
-  const goal = state.profile && state.profile.goalWeight!=null ? +state.profile.goalWeight : null;
+    .map(k=>({ d:new Date(k+"T00:00:00"), w:+state.journal[k][field] }));
+}
+function buildMetricChart(field, title, unit, goal){
+  const pts = metricSeries(field);
   if(pts.length===0){
-    return `<div class="group-label">Body weight</div>
+    return `<div class="group-label">${esc(title)}</div>
       <div class="card" style="padding:20px;text-align:center;color:var(--muted);font-size:14px">
-        Log your morning weight to start your trend.</div>`;
+        Log your ${esc(title.toLowerCase())} in the weekly check-in to start your trend.</div>`;
   }
   const cur = pts[pts.length-1].w, first = pts[0].w;
   const change = +(cur-first).toFixed(1);
@@ -1212,6 +1213,7 @@ function buildWeightChart(){
     const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
     const x=i=> p + (i/(n-1))*(W-2*p);
     const y=w=> H-p - ((w-lo)/(hi-lo))*(H-2*p);
+    const gid = "grad_"+field;
     const line = pts.map((o,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(o.w).toFixed(1)}`).join(" ");
     const area = `${line} L${x(n-1).toFixed(1)} ${H-p} L${x(0).toFixed(1)} ${H-p} Z`;
     const goalLine = (goal!=null && goal>=lo && goal<=hi)
@@ -1219,17 +1221,17 @@ function buildWeightChart(){
          <text x="${W-p}" y="${(y(goal)-5).toFixed(1)}" text-anchor="end" fill="var(--muted)" font-size="9">goal ${goal}</text>` : "";
     const dots = pts.map((o,i)=> (i===0||i===n-1) ? `<circle cx="${x(i).toFixed(1)}" cy="${y(o.w).toFixed(1)}" r="3.5" fill="var(--accent)"/>` : "").join("");
     chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block;margin-top:6px;height:150px">
-        <defs><linearGradient id="wgrad" x1="0" y1="0" x2="0" y2="1">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/>
           <stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
         ${goalLine}
-        <path d="${area}" fill="url(#wgrad)"/>
+        <path d="${area}" fill="url(#${gid})"/>
         <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         ${dots}
       </svg>`;
   }
   const toGo = goal!=null ? ` · ${Math.abs(+(cur-goal).toFixed(1))} ${unit} to goal` : "";
-  return `<div class="group-label">Body weight</div>
+  return `<div class="group-label">${esc(title)}</div>
     <div class="card" style="padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div><div style="font-size:28px;font-weight:800;letter-spacing:-.5px">${cur}<span style="font-size:14px;color:var(--muted);font-weight:600"> ${unit}</span></div>
@@ -1240,6 +1242,17 @@ function buildWeightChart(){
       ${goal!=null?`<div style="font-size:12px;color:var(--muted);margin-top:8px">Goal ${goal} ${unit}${toGo}</div>`:""}
     </div>`;
 }
+function buildWeightChart(){
+  const unit=(state.profile&&state.profile.units==="metric")?"kg":"lb";
+  const goal=(state.profile&&state.profile.goalWeight!=null)?+state.profile.goalWeight:null;
+  return buildMetricChart("weight","Body weight",unit,goal);
+}
+function buildWaistChart(){
+  const unit=(state.profile&&state.profile.units==="metric")?"cm":"in";
+  const goal=(state.profile&&state.profile.waistGoal!=null)?+state.profile.waistGoal:null;
+  return buildMetricChart("waist","Waist",unit,goal);
+}
+function renderTrends(){ $("#weightChart").innerHTML = buildWeightChart()+buildWaistChart(); }
 
 // daily metrics auto-save into state.journal[date]
 function journalToday(){ const dk=todayKey(viewDate); return state.journal[dk] = state.journal[dk] || {}; }
@@ -1769,9 +1782,9 @@ document.querySelectorAll(".rate-btns").forEach(row=>{
 // numeric + note fields — auto-save on input (no re-render, keeps focus)
 $("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
 $("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.target.value):null);
-  $("#weightChart").innerHTML=buildWeightChart(); $("#goalCard").innerHTML=buildGoalCard(); };
+  renderTrends(); $("#goalCard").innerHTML=buildGoalCard(); };
 $("#jWaist").oninput=e=>{ setMetric("waist", e.target.value?parseFloat(e.target.value):null);
-  $("#waistSummary").textContent=waistStat(); };
+  renderTrends(); $("#waistSummary").textContent=waistStat(); };
 $("#jNote").oninput=e=>setMetric("note", e.target.value);
 
 // first-launch disclaimer
