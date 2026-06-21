@@ -1670,9 +1670,8 @@ function renderMetricFields(){
 function numOrNull(el){ return el&&el.value!=="" ? parseFloat(el.value) : null; }
 $("#obBack").onclick=obBack;
 
-// DEV: while building, always show the intro on launch.
-// When the app is finished, set this to false (intro then shows only once).
-const ALWAYS_SHOW_INTRO = true;
+// Intro shows once on first launch; replay any time from Settings → Replay intro tour.
+const ALWAYS_SHOW_INTRO = false;
 
 render();
 if(ALWAYS_SHOW_INTRO || !state.onboarded) startOnboarding(); else maybeDisclaimer();
