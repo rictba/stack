@@ -964,9 +964,20 @@ function allMarkers(){ return LAB_MARKERS.concat(state.labMarkers||[]); }
 function markerByKey(k){ return allMarkers().find(m=>m.k===k); }
 function labStatus(m, v){
   if(v==null || !m || m.lo==null || m.hi==null) return null;
-  if(v < m.lo) return {t:"Low", c:"#F2553D", bg:"rgba(242,85,61,.14)"};
-  if(v > m.hi) return {t:"High", c:"#C9781B", bg:"rgba(232,144,43,.16)"};
-  return {t:"In range", c:"#1f9d57", bg:"rgba(61,214,140,.18)"};
+  if(v>=m.lo && v<=m.hi) return {t:"In range", c:"#1f9d57", bg:"rgba(61,214,140,.18)"};
+  const high = v>m.hi, bound = high?m.hi:m.lo;
+  const frac = bound!==0 ? Math.abs(v-bound)/Math.abs(bound) : 1;   // how far past the boundary
+  if(frac<=0.10) return {t: high?"Borderline high":"Borderline low", c:"#B7791F", bg:"rgba(242,179,61,.20)"};
+  return {t: high?"High":"Low", c:"#F2553D", bg:"rgba(242,85,61,.14)"};
+}
+function labLegend(){
+  const dot=c=>`<span style="width:9px;height:9px;border-radius:50%;background:${c};display:inline-block;flex:none"></span>`;
+  return `<div class="card" style="padding:12px 14px;margin-bottom:16px">
+    <div style="font-size:12.5px;color:var(--text);display:flex;flex-direction:column;gap:7px">
+      <span style="display:flex;align-items:center;gap:8px">${dot("#1f9d57")} <b>In range</b> — within the reference range</span>
+      <span style="display:flex;align-items:center;gap:8px">${dot("#B7791F")} <b>Borderline</b> — just outside, within 10% of the limit</span>
+      <span style="display:flex;align-items:center;gap:8px">${dot("#F2553D")} <b>Out of range</b> — more than 10% beyond the limit</span>
+    </div></div>`;
 }
 function markerHistory(k){
   return (state.labs||[]).filter(s=>s.values && s.values[k]!=null)
@@ -1000,6 +1011,7 @@ function renderLabs(){
     return;
   }
   const withData=allMarkers().filter(m=>markerHistory(m.k).length>0);
+  html+=labLegend();
   if(withData.length){
     html+=`<div class="group-label">Markers</div>`;
     let curGrp="";
