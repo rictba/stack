@@ -927,10 +927,11 @@ function openEditor(id, prefill){
         <button data-v="supplement" class="${it.type==='supplement'?'sel':''}">Supplement</button>
       </div></div>
 
-    <div class="field" id="fRouteWrap"><label>Injection route</label>
+    <div class="field" id="fRouteWrap"><label>Route</label>
       <div class="seg" id="fRoute">
         <button data-v="SubQ" class="${(it.route||'SubQ')==='SubQ'?'sel':''}">SubQ</button>
         <button data-v="IM" class="${it.route==='IM'?'sel':''}">IM</button>
+        <button data-v="Nasal" class="${it.route==='Nasal'?'sel':''}">Nasal</button>
       </div></div>
 
     <div class="field"><label>Dose</label>
@@ -1062,7 +1063,12 @@ function openEditor(id, prefill){
   renderSched(); renderInv(); renderDose();
 
   seg("#fType", v=>{ renderDose(); });
-  seg("#fRoute", v=>{});
+  seg("#fRoute", v=>{
+    if(v==="Nasal"){
+      work.inject=false;
+      $("#fInject").querySelectorAll("button").forEach(x=>x.classList.toggle("sel", x.dataset.v==="0"));
+    }
+  });
   seg("#fSchedType", v=>{ work.type=v; renderSched(); });
   seg("#fInject", v=>{ work.inject = v==="1"; });
   ["fAmt","fVial","fBac"].forEach(idn=>$("#"+idn).oninput=renderDose);
@@ -1664,9 +1670,8 @@ function renderMetricFields(){
 function numOrNull(el){ return el&&el.value!=="" ? parseFloat(el.value) : null; }
 $("#obBack").onclick=obBack;
 
-// DEV: while building, always show the intro on launch.
-// When the app is finished, set this to false (intro then shows only once).
-const ALWAYS_SHOW_INTRO = true;
+// Intro shows once on first launch; replay any time from Settings → Replay intro tour.
+const ALWAYS_SHOW_INTRO = false;
 
 render();
 if(ALWAYS_SHOW_INTRO || !state.onboarded) startOnboarding(); else maybeDisclaimer();
