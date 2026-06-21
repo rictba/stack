@@ -645,6 +645,8 @@ function load(){
   d.settings = d.settings || {};
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
+  // heal: nasal items shouldn't carry the syringe "draw N u" suffix in their saved dose
+  (d.items||[]).forEach(it=>{ if(it.route==="Nasal" && it.dose) it.dose = it.dose.replace(/\s*·\s*draw\s+[\d.]+\s*u\b/i, ""); });
   // drop orphaned dose logs (keys whose item id no longer exists) — clears stale "done" marks
   const validIds=new Set((d.items||[]).map(i=>i.id));
   Object.keys(d.logs).forEach(day=>{
