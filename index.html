@@ -100,6 +100,8 @@
   .card-head{display:flex;align-items:center;gap:12px}
   .card-head .item-body{cursor:pointer}
   .mini-btn{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
+  #pfAims .mini-btn{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--text);background:var(--surface)}
+  #pfAims .mini-btn.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 
   .inv-row{display:flex;align-items:center;gap:14px}
   .inv-meter{flex:1}
@@ -861,6 +863,7 @@ function restock(id){
 
 /* ---------- today goal card ---------- */
 const GOAL_LABELS = { peptides:"On peptides / compounds", glp1:"On a GLP-1", trt:"On TRT or similar", stack:"Managing a full stack" };
+const ACHIEVE_OPTS = ["Lose weight","Build muscle","Body recomposition","More energy","Better sleep","Recover faster","Sharper focus","Longevity & anti-aging","Healthier hair, skin & joints"];
 function buildGoalCard(){
   const p = state.profile||{};
   const focus = GOAL_LABELS[p.goal];
@@ -1388,6 +1391,20 @@ function openProfileEditor(){
     <div class="field"><label>Email <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input id="pfEmail" type="email" value="${esc(p.email||"")}" placeholder="you@email.com">
       <div class="hint">Stored locally only — no account, not verified.</div></div>
+
+    <div class="group-label">Goals</div>
+    <div class="field"><label>Focus</label>
+      <select id="pfGoal" style="width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px">
+        <option value="">— not set —</option>
+        ${Object.entries(GOAL_LABELS).map(([k,v])=>`<option value="${k}" ${p.goal===k?'selected':''}>${esc(v)}</option>`).join("")}
+      </select></div>
+    <div class="field"><label>Aims <span style="font-weight:400;color:var(--muted)">(tap any)</span></label>
+      <div id="pfAims" style="display:flex;flex-wrap:wrap;gap:8px">
+        ${ACHIEVE_OPTS.map(o=>`<button type="button" class="mini-btn ${(p.achieve||[]).includes(o)?'sel':''}" data-aim="${esc(o)}">${esc(o)}</button>`).join("")}
+      </div></div>
+    <div class="field"><label>Goal weight (${p.units==="metric"?"kg":"lb"})</label>
+      <input id="pfGoalW" type="number" inputmode="decimal" value="${p.goalWeight??""}" placeholder="—"></div>
+
     <button class="btn" id="pfSave">Save</button>
     <button class="btn ghost" id="pfCancel">Cancel</button>`;
   $("#pfPic").onchange=e=>{
@@ -1402,8 +1419,12 @@ function openProfileEditor(){
       }; img.src=r.result; };
     r.readAsDataURL(f);
   };
+  $("#pfAims").querySelectorAll("[data-aim]").forEach(b=>b.onclick=()=>b.classList.toggle("sel"));
   $("#pfSave").onclick=()=>{
     p.name=$("#pfName").value.trim(); p.email=$("#pfEmail").value.trim(); p.avatar=avatarData;
+    p.goal=$("#pfGoal").value||undefined;
+    p.achieve=[...$("#pfAims").querySelectorAll(".sel")].map(b=>b.dataset.aim);
+    const gw=parseFloat($("#pfGoalW").value); p.goalWeight=isNaN(gw)?undefined:gw;
     save(); closeSheet(); render();
   };
   $("#pfCancel").onclick=closeSheet;
@@ -1503,7 +1524,7 @@ function renderOb(){
     footHtml=obFoot("Continue", !!prof.goal);
   }
   else if(step==="achieve"){
-    const opts=["Lose weight","Build muscle","Body recomposition","More energy","Better sleep","Recover faster","Sharper focus","Longevity & anti-aging","Healthier hair, skin & joints"];
+    const opts=ACHIEVE_OPTS;
     prof.achieve=prof.achieve||[];
     html=`<h2>What are you hoping to achieve?</h2><p class="sub">Pick everything that fits.</p>
       ${opts.map(o=>`<button class="ob-opt ${prof.achieve.includes(o)?'sel':''}" data-multi="achieve" data-val="${esc(o)}"><span><b>${o}</b></span><span class="ob-radio">✓</span></button>`).join("")}`;
