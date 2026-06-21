@@ -1023,20 +1023,24 @@ function openEditor(id, prefill){
   }
   function curDose(){ return { amt:parseFloat($("#fAmt").value), unit:$("#fUnit").value,
     vial:parseFloat($("#fVial").value), bac:parseFloat($("#fBac").value) }; }
+  function curRoute(){ return ($("#fRoute").querySelector(".sel")||{}).dataset?.v || "SubQ"; }
   function doseString(d, calc){
     if(!d.amt && d.amt!==0) return "";
     let s = `${+d.amt} ${d.unit}`;
-    if(calc && (d.unit==="mg"||d.unit==="mcg"||d.unit==="units")) s += ` · draw ${calc.units.toFixed(1)} u`;
+    if(curRoute()!=="Nasal" && calc && (d.unit==="mg"||d.unit==="mcg"||d.unit==="units")) s += ` · draw ${calc.units.toFixed(1)} u`;
     return s;
   }
   function renderDose(){
     const type=$("#fType").querySelector(".sel").dataset.v, isPep=type==="peptide";
     $("#fRouteWrap").style.display = isPep ? "" : "none";
-    const d=curDose(), needsRecon=isPep && (d.unit==="mg"||d.unit==="mcg");
+    const isNasal = isPep && curRoute()==="Nasal";
+    const d=curDose(), needsRecon=isPep && !isNasal && (d.unit==="mg"||d.unit==="mcg");
     $("#fRecon").style.display = needsRecon ? "" : "none";
-    const calc=isPep ? drawCalc(d.amt,d.unit,d.vial,d.bac) : null;
+    const calc=(isPep && !isNasal) ? drawCalc(d.amt,d.unit,d.vial,d.bac) : null;
     let html="";
-    if(calc){
+    if(isNasal && d.amt){
+      html+=`<div style="color:var(--accent);font-weight:700;font-size:14px">Nasal — ${+d.amt} ${d.unit} per dose</div>`;
+    } else if(calc){
       html+=`<div style="color:var(--accent);font-weight:700;font-size:16px">Draw ${calc.units.toFixed(1)} u`;
       if(calc.ml!=null) html+=` <span style="color:var(--muted);font-weight:400;font-size:12px">= ${calc.ml.toFixed(3)} ml</span>`;
       html+=`</div>`;
@@ -1068,6 +1072,7 @@ function openEditor(id, prefill){
       work.inject=false;
       $("#fInject").querySelectorAll("button").forEach(x=>x.classList.toggle("sel", x.dataset.v==="0"));
     }
+    renderDose();
   });
   seg("#fSchedType", v=>{ work.type=v; renderSched(); });
   seg("#fInject", v=>{ work.inject = v==="1"; });
