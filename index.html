@@ -102,6 +102,13 @@
   .mini-btn{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
   #pfAims .mini-btn{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--text);background:var(--surface)}
   #pfAims .mini-btn.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .lab-grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
+  .lab-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .lab-row .nm{flex:1;font-size:15px}
+  .lab-row input{width:96px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px 11px;text-align:right;font-size:15px}
+  .lab-row .un{width:52px;font-size:12px;color:var(--muted)}
+  .lab-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+  #labSearch{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:11px 14px;font-size:15px}
 
   .inv-row{display:flex;align-items:center;gap:14px}
   .inv-meter{flex:1}
@@ -377,6 +384,12 @@
     <div id="invList"></div>
   </section>
 
+  <!-- LABS -->
+  <section class="tab" id="tab-labs">
+    <p class="tab-intro"><b>Labs.</b> Log bloodwork by date and track each marker against its reference range over time. Reference only — not medical advice.</p>
+    <div id="labsBody"></div>
+  </section>
+
   <!-- LIBRARY -->
   <section class="tab" id="tab-library">
     <p class="tab-intro"><b>Reference.</b> What each compound is, what it does, and recommended doses. Tap <b>+ Add to protocol</b> on anything you take.</p>
@@ -409,6 +422,10 @@
   <button data-tab="inventory">
     <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
     Inventory
+  </button>
+  <button data-tab="labs">
+    <svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.5L4.8 17.4A2 2 0 0 0 6.5 20.5h11a2 2 0 0 0 1.7-3.1L14 9.5V3"/><path d="M7.5 14h9"/></svg>
+    Labs
   </button>
   <button data-tab="library">
     <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -667,6 +684,8 @@ function load(){
   // integrity: guarantee unique, non-empty item ids
   d.logs = d.logs || {};
   d.settings = d.settings || {};
+  d.labs = Array.isArray(d.labs) ? d.labs : [];
+  d.labMarkers = Array.isArray(d.labMarkers) ? d.labMarkers : [];
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
   // heal: nasal items shouldn't carry the syringe "draw N u" suffix in their saved dose
@@ -877,6 +896,241 @@ function restock(id){
   it.dosesLeft=(it.dosesLeft||0)+n;
   if((it.capacity||0) < it.dosesLeft) it.capacity=it.dosesLeft;
   save(); render();
+}
+
+/* ---------- labs ---------- */
+const LAB_GROUPS = ["Hormones","Metabolic","Lipids","Liver","Blood","Kidney","Electrolytes & Minerals","Vitamins & Iron","Inflammation & Cardio","Other","Custom"];
+const LAB_MARKERS = [
+  {k:"total_t",name:"Total Testosterone",unit:"ng/dL",grp:"Hormones",lo:300,hi:1000},
+  {k:"free_t",name:"Free Testosterone",unit:"pg/mL",grp:"Hormones",lo:9,hi:30},
+  {k:"bioavail_t",name:"Bioavailable Testosterone",unit:"ng/dL",grp:"Hormones",lo:130,hi:680},
+  {k:"dht",name:"DHT",unit:"ng/dL",grp:"Hormones",lo:30,hi:85},
+  {k:"e2",name:"Estradiol",unit:"pg/mL",grp:"Hormones",lo:10,hi:40},
+  {k:"shbg",name:"SHBG",unit:"nmol/L",grp:"Hormones",lo:10,hi:57},
+  {k:"prolactin",name:"Prolactin",unit:"ng/mL",grp:"Hormones",lo:4,hi:15},
+  {k:"igf1",name:"IGF-1",unit:"ng/mL",grp:"Hormones",lo:90,hi:300},
+  {k:"dheas",name:"DHEA-S",unit:"µg/dL",grp:"Hormones",lo:100,hi:500},
+  {k:"cortisol_am",name:"Cortisol (AM)",unit:"µg/dL",grp:"Hormones",lo:6,hi:20},
+  {k:"fsh",name:"FSH",unit:"mIU/mL",grp:"Hormones",lo:1.5,hi:12.4},
+  {k:"lh",name:"LH",unit:"mIU/mL",grp:"Hormones",lo:1.7,hi:8.6},
+  {k:"progesterone",name:"Progesterone",unit:"ng/mL",grp:"Hormones",lo:0.1,hi:0.5},
+  {k:"a1c",name:"A1C",unit:"%",grp:"Metabolic",lo:4.0,hi:5.6},
+  {k:"glucose",name:"Fasting Glucose",unit:"mg/dL",grp:"Metabolic",lo:70,hi:99},
+  {k:"insulin",name:"Fasting Insulin",unit:"µIU/mL",grp:"Metabolic",lo:2,hi:12},
+  {k:"homair",name:"HOMA-IR",unit:"",grp:"Metabolic",lo:0.5,hi:2.0},
+  {k:"tsh",name:"TSH",unit:"mIU/L",grp:"Metabolic",lo:0.4,hi:4.0},
+  {k:"ft3",name:"Free T3",unit:"pg/mL",grp:"Metabolic",lo:2.3,hi:4.2},
+  {k:"ft4",name:"Free T4",unit:"ng/dL",grp:"Metabolic",lo:0.8,hi:1.8},
+  {k:"rt3",name:"Reverse T3",unit:"ng/dL",grp:"Metabolic",lo:8,hi:25},
+  {k:"chol",name:"Total Cholesterol",unit:"mg/dL",grp:"Lipids",lo:125,hi:200},
+  {k:"ldl",name:"LDL",unit:"mg/dL",grp:"Lipids",lo:0,hi:100},
+  {k:"hdl",name:"HDL",unit:"mg/dL",grp:"Lipids",lo:40,hi:90},
+  {k:"trig",name:"Triglycerides",unit:"mg/dL",grp:"Lipids",lo:0,hi:150},
+  {k:"apob",name:"ApoB",unit:"mg/dL",grp:"Lipids",lo:0,hi:90},
+  {k:"lpa",name:"Lp(a)",unit:"nmol/L",grp:"Lipids",lo:0,hi:75},
+  {k:"alp",name:"ALP",unit:"U/L",grp:"Liver",lo:44,hi:147},
+  {k:"alt",name:"ALT",unit:"U/L",grp:"Liver",lo:7,hi:55},
+  {k:"ast",name:"AST",unit:"U/L",grp:"Liver",lo:8,hi:48},
+  {k:"ggt",name:"GGT",unit:"U/L",grp:"Liver",lo:8,hi:61},
+  {k:"bilirubin",name:"Bilirubin",unit:"mg/dL",grp:"Liver",lo:0.1,hi:1.2},
+  {k:"albumin",name:"Albumin",unit:"g/dL",grp:"Liver",lo:3.5,hi:5.0},
+  {k:"hct",name:"Hematocrit",unit:"%",grp:"Blood",lo:39,hi:50},
+  {k:"hgb",name:"Hemoglobin",unit:"g/dL",grp:"Blood",lo:13.5,hi:17.5},
+  {k:"rbc",name:"RBC",unit:"M/µL",grp:"Blood",lo:4.7,hi:6.1},
+  {k:"wbc",name:"WBC",unit:"K/µL",grp:"Blood",lo:3.4,hi:10.8},
+  {k:"platelets",name:"Platelets",unit:"K/µL",grp:"Blood",lo:150,hi:450},
+  {k:"creatinine",name:"Creatinine",unit:"mg/dL",grp:"Kidney",lo:0.74,hi:1.35},
+  {k:"bun",name:"BUN",unit:"mg/dL",grp:"Kidney",lo:7,hi:20},
+  {k:"egfr",name:"eGFR",unit:"mL/min",grp:"Kidney",lo:60,hi:120},
+  {k:"uric",name:"Uric Acid",unit:"mg/dL",grp:"Kidney",lo:3.5,hi:7.2},
+  {k:"sodium",name:"Sodium",unit:"mEq/L",grp:"Electrolytes & Minerals",lo:135,hi:145},
+  {k:"potassium",name:"Potassium",unit:"mEq/L",grp:"Electrolytes & Minerals",lo:3.5,hi:5.2},
+  {k:"magnesium",name:"Magnesium",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:1.7,hi:2.2},
+  {k:"calcium",name:"Calcium",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:8.6,hi:10.3},
+  {k:"zinc",name:"Zinc",unit:"µg/dL",grp:"Electrolytes & Minerals",lo:60,hi:120},
+  {k:"vitd",name:"Vitamin D",unit:"ng/mL",grp:"Vitamins & Iron",lo:30,hi:100},
+  {k:"b12",name:"Vitamin B12",unit:"pg/mL",grp:"Vitamins & Iron",lo:200,hi:900},
+  {k:"folate",name:"Folate",unit:"ng/mL",grp:"Vitamins & Iron",lo:3,hi:17},
+  {k:"ferritin",name:"Ferritin",unit:"ng/mL",grp:"Vitamins & Iron",lo:30,hi:400},
+  {k:"iron",name:"Iron",unit:"µg/dL",grp:"Vitamins & Iron",lo:65,hi:175},
+  {k:"tibc",name:"TIBC",unit:"µg/dL",grp:"Vitamins & Iron",lo:250,hi:450},
+  {k:"tsat",name:"Transferrin Saturation",unit:"%",grp:"Vitamins & Iron",lo:20,hi:50},
+  {k:"crp",name:"CRP",unit:"mg/L",grp:"Inflammation & Cardio",lo:0,hi:3.0},
+  {k:"hscrp",name:"hs-CRP",unit:"mg/L",grp:"Inflammation & Cardio",lo:0,hi:1.0},
+  {k:"homocysteine",name:"Homocysteine",unit:"µmol/L",grp:"Inflammation & Cardio",lo:0,hi:15},
+  {k:"psa",name:"PSA",unit:"ng/mL",grp:"Other",lo:0,hi:4},
+];
+function allMarkers(){ return LAB_MARKERS.concat(state.labMarkers||[]); }
+function markerByKey(k){ return allMarkers().find(m=>m.k===k); }
+function labStatus(m, v){
+  if(v==null || !m || m.lo==null || m.hi==null) return null;
+  if(v < m.lo) return {t:"Low", c:"#F2553D", bg:"rgba(242,85,61,.14)"};
+  if(v > m.hi) return {t:"High", c:"#C9781B", bg:"rgba(232,144,43,.16)"};
+  return {t:"In range", c:"#1f9d57", bg:"rgba(61,214,140,.18)"};
+}
+function markerHistory(k){
+  return (state.labs||[]).filter(s=>s.values && s.values[k]!=null)
+    .map(s=>({date:s.date, v:+s.values[k]}))
+    .sort((a,b)=>a.date<b.date?-1:1);
+}
+function labDate(d){ const x=new Date(d+"T00:00:00");
+  return x.toLocaleDateString([], {month:"short", day:"numeric", year:"numeric"}); }
+function sparkline(vals, lo, hi, H){
+  H=H||44; const W=300, p=6, n=vals.length;
+  if(n<2) return "";
+  let mn=Math.min(...vals), mx=Math.max(...vals);
+  if(lo!=null) mn=Math.min(mn,lo);
+  if(hi!=null) mx=Math.max(mx,hi);
+  if(mx===mn){ mx+=1; mn-=1; }
+  const x=i=>p+(i/(n-1))*(W-2*p), y=v=>H-p-((v-mn)/(mx-mn))*(H-2*p);
+  let band="";
+  if(lo!=null&&hi!=null){ const yb=y(hi), hb=Math.max(0, y(lo)-y(hi)); band=`<rect x="0" y="${yb.toFixed(1)}" width="${W}" height="${hb.toFixed(1)}" fill="rgba(61,214,140,.13)"/>`; }
+  const line=vals.map((v,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const dots = H>60 ? vals.map((v,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.5" fill="var(--accent)"/>`).join("") : "";
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="height:${H}px;display:block;margin-top:8px">${band}<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`;
+}
+function renderLabs(){
+  const body=$("#labsBody");
+  const sessions=(state.labs||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+  let html=`<button class="btn" id="labAdd" style="margin-bottom:16px">＋ Log lab results</button>`;
+  if(sessions.length===0){
+    html+=emptyState("🧪","No labs yet","Tap “Log lab results” to enter your first panel — each value is flagged against its reference range.");
+    body.innerHTML=html;
+    $("#labAdd").onclick=()=>openLabLogger(null);
+    return;
+  }
+  const withData=allMarkers().filter(m=>markerHistory(m.k).length>0);
+  if(withData.length){
+    html+=`<div class="group-label">Markers</div>`;
+    let curGrp="";
+    withData.forEach(m=>{
+      const h=markerHistory(m.k), latest=h[h.length-1], prev=h.length>1?h[h.length-2]:null;
+      const st=labStatus(m, latest.v), delta=prev?+(latest.v-prev.v).toFixed(2):null;
+      if(m.grp!==curGrp){ curGrp=m.grp; html+=`<div class="lab-grp">${esc(curGrp)}</div>`; }
+      html+=`<div class="card" style="padding:12px 14px;margin-bottom:8px" data-marker="${m.k}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1">
+            <div class="item-name" style="font-size:15px">${esc(m.name)}</div>
+            <div class="item-sub">${latest.v} ${esc(m.unit)}${delta!=null&&delta!==0?` · ${delta<0?"−":"+"}${Math.abs(delta)}`:""} · ${labDate(latest.date)}</div>
+          </div>
+          ${st?`<span class="lab-pill" style="background:${st.bg};color:${st.c}">${st.t}</span>`:""}
+        </div>
+        ${sparkline(h.map(p=>p.v), m.lo, m.hi)}
+      </div>`;
+    });
+  }
+  html+=`<div class="group-label" style="margin-top:18px">Panels</div>`;
+  sessions.forEach(s=>{
+    const keys=Object.keys(s.values||{}).filter(k=>s.values[k]!=null);
+    let flags=0; keys.forEach(k=>{ const st=labStatus(markerByKey(k), +s.values[k]); if(st&&st.t!=="In range") flags++; });
+    html+=`<div class="card" style="padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1" data-edit-lab="${s.id}">
+          <div class="item-name" style="font-size:15px">${labDate(s.date)}${s.provider?` · ${esc(s.provider)}`:""}</div>
+          <div class="item-sub">${keys.length} marker${keys.length!==1?"s":""}${flags?` · ${flags} out of range`:""}</div>
+        </div>
+        <button class="mini-btn" data-edit-lab="${s.id}">Edit</button>
+        <button class="mini-btn" data-del-lab="${s.id}" style="color:var(--red)">Delete</button>
+      </div>
+    </div>`;
+  });
+  body.innerHTML=html;
+  $("#labAdd").onclick=()=>openLabLogger(null);
+  body.querySelectorAll("[data-marker]").forEach(el=>el.onclick=()=>openMarkerDetail(el.dataset.marker));
+  body.querySelectorAll("[data-edit-lab]").forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); openLabLogger(el.dataset.editLab); });
+  body.querySelectorAll("[data-del-lab]").forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation();
+    const s=state.labs.find(x=>x.id===el.dataset.delLab); if(!s) return;
+    if(confirm(`Delete the ${labDate(s.date)} panel?`)){ state.labs=state.labs.filter(x=>x.id!==el.dataset.delLab); save(); renderLabs(); }
+  });
+}
+function openMarkerDetail(k){
+  const m=markerByKey(k); if(!m) return;
+  const h=markerHistory(k), latest=h.length?h[h.length-1]:null, st=latest?labStatus(m,latest.v):null;
+  $("#sheet").innerHTML=`
+    <h2>${esc(m.name)}</h2>
+    <div class="hint" style="margin:-6px 0 14px">Reference: ${m.lo}–${m.hi} ${esc(m.unit)} · for reference only</div>
+    ${latest?`<div class="card" style="padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1"><div style="font-size:26px;font-weight:700;color:var(--accent)">${latest.v} <span style="font-size:13px;color:var(--muted);font-weight:600">${esc(m.unit)}</span></div>
+          <div class="item-sub">Latest · ${labDate(latest.date)}</div></div>
+        ${st?`<span class="lab-pill" style="background:${st.bg};color:${st.c}">${st.t}</span>`:""}
+      </div>
+      ${sparkline(h.map(p=>p.v), m.lo, m.hi, 130)}
+    </div>`:""}
+    <div class="group-label">History</div>
+    ${h.slice().reverse().map(p=>{ const s2=labStatus(m,p.v);
+      return `<div class="lab-row"><span class="nm">${labDate(p.date)}</span>
+        <span style="font-weight:700">${p.v} <span style="color:var(--muted);font-weight:400;font-size:12px">${esc(m.unit)}</span></span>
+        ${s2?`<span class="lab-pill" style="background:${s2.bg};color:${s2.c};margin-left:10px">${s2.t}</span>`:""}</div>`;
+    }).join("")}
+    <button class="btn ghost" id="mdClose" style="margin-top:16px">Close</button>`;
+  $("#mdClose").onclick=closeSheet;
+  $("#scrim").classList.add("open");
+}
+function openLabLogger(id){
+  const src = id ? state.labs.find(s=>s.id===id) : null;
+  const sess = { id: src?src.id:uid(), date: src?src.date:todayKey(new Date()),
+    provider: src?src.provider:"", values: Object.assign({}, src?src.values:{}) };
+  function capture(){
+    sess.date=$("#labDate").value||sess.date;
+    sess.provider=$("#labProv").value.trim();
+    allMarkers().forEach(m=>{ const el=$("#lv_"+m.k); if(!el) return;
+      const v=parseFloat(el.value); sess.values[m.k]=isNaN(v)?undefined:v; });
+  }
+  function draw(){
+    const groups={}; allMarkers().forEach(m=>{ (groups[m.grp]=groups[m.grp]||[]).push(m); });
+    const order=LAB_GROUPS.concat(Object.keys(groups).filter(g=>!LAB_GROUPS.includes(g)));
+    const rows=order.filter(g=>groups[g]).map(g=>`
+      <div class="lab-grp" data-grp-head>${esc(g)}</div>
+      ${groups[g].map(m=>`<div class="lab-row" data-row="${esc(m.name.toLowerCase())}">
+        <span class="nm">${esc(m.name)}</span>
+        <input id="lv_${m.k}" type="number" inputmode="decimal" step="any" placeholder="–" value="${sess.values[m.k]??""}">
+        <span class="un">${esc(m.unit)}</span>
+      </div>`).join("")}`).join("");
+    $("#sheet").innerHTML=`
+      <h2>Log Lab Results</h2>
+      <div class="row2" style="margin-bottom:10px">
+        <div class="field" style="margin:0"><label>Date</label><input id="labDate" type="date" value="${sess.date}"></div>
+        <div class="field" style="margin:0"><label>Provider <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input id="labProv" value="${esc(sess.provider||"")}" placeholder="e.g. Quest"></div>
+      </div>
+      <input id="labSearch" placeholder="Search markers…" style="margin-bottom:6px">
+      <div id="labRows">${rows}</div>
+      <button class="btn ghost" id="labAddMarker" style="margin-top:10px">＋ Add custom marker</button>
+      <button class="btn" id="labSave" style="margin-top:8px">Save results</button>
+      ${id?'<button class="btn danger" id="labDelete">Delete panel</button>':''}
+      <button class="btn ghost" id="labCancel">Cancel</button>`;
+    $("#labSearch").oninput=e=>{
+      const q=e.target.value.trim().toLowerCase();
+      $("#labRows").querySelectorAll("[data-row]").forEach(r=>{ r.style.display=r.dataset.row.includes(q)?"":"none"; });
+      $("#labRows").querySelectorAll("[data-grp-head]").forEach(hd=>{
+        let n=hd.nextElementSibling, any=false;
+        while(n && n.hasAttribute && n.hasAttribute("data-row")){ if(n.style.display!=="none") any=true; n=n.nextElementSibling; }
+        hd.style.display=any?"":"none";
+      });
+    };
+    $("#labAddMarker").onclick=()=>{
+      const name=prompt("Marker name (e.g. Free T3)"); if(!name||!name.trim()) return;
+      const unit=(prompt("Unit (e.g. pg/mL)")||"").trim();
+      const lo=parseFloat(prompt("Reference low (optional)"));
+      const hi=parseFloat(prompt("Reference high (optional)"));
+      state.labMarkers=state.labMarkers||[];
+      state.labMarkers.push({k:"cust_"+uid(), name:name.trim(), unit, grp:"Custom", lo:isNaN(lo)?null:lo, hi:isNaN(hi)?null:hi});
+      capture(); save(); draw();
+    };
+    $("#labSave").onclick=()=>{
+      capture();
+      const clean={}; Object.keys(sess.values).forEach(k=>{ if(sess.values[k]!=null) clean[k]=sess.values[k]; });
+      if(Object.keys(clean).length===0){ alert("Enter at least one marker value."); return; }
+      const rec = id ? state.labs.find(s=>s.id===id) : {id:sess.id};
+      rec.date=sess.date; rec.provider=sess.provider; rec.values=clean;
+      if(!id) state.labs.push(rec);
+      save(); closeSheet(); renderLabs();
+    };
+    if(id) $("#labDelete").onclick=()=>{ if(confirm("Delete this lab panel?")){ state.labs=state.labs.filter(s=>s.id!==id); save(); closeSheet(); renderLabs(); } };
+    $("#labCancel").onclick=closeSheet;
+  }
+  draw();
+  $("#scrim").classList.add("open");
 }
 
 /* ---------- weekly check-in helpers ---------- */
@@ -1477,6 +1731,7 @@ function render(){
   if(curTab==="today")renderToday();
   else if(curTab==="protocol")renderProtocol();
   else if(curTab==="inventory")renderInventory();
+  else if(curTab==="labs")renderLabs();
   else if(curTab==="library")renderLibrary();
   else if(curTab==="settings")renderSettings();
 }
@@ -1485,7 +1740,7 @@ function switchTab(t){
   document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("active",s.id==="tab-"+t));
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));
   $("#fab").classList.toggle("hidden", t!=="protocol");
-  $("#dateNav").style.visibility = (t==="library"||t==="settings"||t==="inventory")?"hidden":"visible";
+  $("#dateNav").style.visibility = (t==="library"||t==="settings"||t==="inventory"||t==="labs")?"hidden":"visible";
   render();
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
