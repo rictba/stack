@@ -100,8 +100,16 @@
   .card-head{display:flex;align-items:center;gap:12px}
   .card-head .item-body{cursor:pointer}
   .mini-btn{font-size:13px;color:var(--accent);font-weight:600;padding:6px 4px}
-  #pfAims .mini-btn{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--text);background:var(--surface)}
-  #pfAims .mini-btn.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  #pfAims .mini-btn,#fTargets .mini-btn{border:1px solid var(--line);border-radius:999px;padding:7px 12px;color:var(--text);background:var(--surface)}
+  #pfAims .mini-btn.sel,#fTargets .mini-btn.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .aim-list{margin-top:2px}
+  .aim-row{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+  .aim-row:first-child{border-top:none}
+  .aim-nm{flex:1;font-size:13px;font-weight:600}
+  .aim-cm{flex:1.1;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+  .aim-pill{font-size:11px;font-weight:600;background:var(--accent);color:#fff;border-radius:999px;padding:3px 9px}
+  .aim-nudge{font-size:11px;font-weight:600;background:var(--surface2);border:1px dashed var(--accent);color:var(--accent);border-radius:999px;padding:3px 9px}
+  .aim-none{font-size:11px;color:var(--muted)}
   .lab-grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
   .lab-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
   .lab-row .nm{flex:1;font-size:15px}
@@ -775,7 +783,7 @@ function renderToday(){
     ? "✓ Logged this week — edit anytime."
     : "Log your weight & waist once a week.";
   $("#waistSummary").textContent = waistStat();
-  $("#goalCard").innerHTML = buildGoalCard();
+  renderGoalCard();
   renderTrends();
 
   // ---- protocol checklist ----
@@ -1170,6 +1178,41 @@ function waistStat(){
 /* ---------- today goal card ---------- */
 const GOAL_LABELS = { peptides:"On peptides / compounds", glp1:"On a GLP-1", trt:"On TRT or similar", stack:"Managing a full stack" };
 const ACHIEVE_OPTS = ["Lose weight","Build muscle","Body recomposition","More energy","Better sleep","Recover faster","Sharper focus","Longevity & anti-aging","Healthier hair, skin & joints"];
+// curated default map: compound token -> aims it's commonly associated with (override per-item in the editor)
+const COMPOUND_AIMS = {
+  cjc1295:["Build muscle","Body recomposition","Better sleep","Recover faster","Longevity & anti-aging"],
+  ipamorelin:["Build muscle","Body recomposition","Better sleep","Recover faster","Longevity & anti-aging"],
+  bpc157:["Recover faster","Healthier hair, skin & joints"],
+  tb500:["Recover faster","Healthier hair, skin & joints"],
+  thymosin:["Recover faster","Healthier hair, skin & joints"],
+  retatrutide:["Lose weight","Body recomposition"],
+  tirzepatide:["Lose weight","Body recomposition"],
+  semaglutide:["Lose weight","Body recomposition"],
+  selank:["Sharper focus","More energy"],
+  semax:["Sharper focus","More energy"],
+  ghkcu:["Healthier hair, skin & joints","Recover faster"],
+  tesamorelin:["Lose weight","Body recomposition","Longevity & anti-aging"],
+  epithalon:["Longevity & anti-aging","Better sleep"],
+  kpv:["Recover faster"],
+  motsc:["More energy","Lose weight","Longevity & anti-aging"],
+  nad:["More energy","Longevity & anti-aging"],
+  vitamind:["More energy","Longevity & anti-aging"],
+  magnesium:["Better sleep","Recover faster"],
+  omega3:["Longevity & anti-aging","Healthier hair, skin & joints","Sharper focus"],
+  fishoil:["Longevity & anti-aging","Healthier hair, skin & joints","Sharper focus"],
+  creatine:["Build muscle","More energy","Sharper focus"],
+  zinc:["Healthier hair, skin & joints","Longevity & anti-aging"],
+  nicotinamideriboside:["More energy","Longevity & anti-aging"],
+  tmg:["More energy"],
+  bcomplex:["More energy","Sharper focus"],
+};
+function autoAimsFor(name){
+  const norm=(name||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  const set=new Set();
+  Object.keys(COMPOUND_AIMS).forEach(key=>{ if(norm.includes(key)) COMPOUND_AIMS[key].forEach(a=>set.add(a)); });
+  return [...set];
+}
+function itemAims(item){ return (item.targets && item.targets.length) ? item.targets : autoAimsFor(item.name); }
 function buildGoalCard(){
   const p = state.profile||{};
   const focus = GOAL_LABELS[p.goal];
@@ -1186,13 +1229,35 @@ function buildGoalCard(){
     } else target = `Goal ${p.goalWeight} ${wu}`;
   }
   if(!focus && aims.length===0 && !target) return "";
+  let linkHtml="";
+  if(aims.length){
+    const haveNames=new Set((state.items||[]).map(it=>(it.name||"").toLowerCase()));
+    linkHtml = aims.map(aim=>{
+      const taken=(state.items||[]).filter(it=>itemAims(it).includes(aim));
+      let right;
+      if(taken.length){
+        right = taken.map(it=>`<span class="aim-pill">${esc(it.name)}</span>`).join("");
+      } else {
+        const sugg=(state.library||[]).find(lib=>!haveNames.has((lib.name||"").toLowerCase()) && autoAimsFor(lib.name).includes(aim));
+        right = sugg ? `<button class="aim-nudge" data-nudge="${sugg.id}">+ ${esc(sugg.name)}</button>`
+                     : `<span class="aim-none">none yet</span>`;
+      }
+      return `<div class="aim-row"><div class="aim-nm">${esc(aim)}</div><div class="aim-cm">${right}</div></div>`;
+    }).join("");
+  }
   return `<div class="card" style="padding:14px;margin-bottom:4px">
     <div class="group-label" style="margin:0 0 8px">Your focus</div>
     ${focus?`<div class="item-name" style="font-size:15px">${esc(focus)}</div>`:""}
     ${target?`<div class="item-sub" style="color:var(--accent);margin-top:4px">🎯 ${esc(target)}</div>`:""}
-    ${aims.length?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
-      ${aims.map(a=>`<span class="pill" style="background:#26283010;border:1px solid var(--line);color:var(--muted)">${esc(a)}</span>`).join("")}</div>`:""}
+    ${linkHtml?`<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 2px">Stack ↔ goals</div><div class="aim-list">${linkHtml}</div>`:""}
   </div>`;
+}
+function renderGoalCard(){
+  $("#goalCard").innerHTML = buildGoalCard();
+  $("#goalCard").querySelectorAll("[data-nudge]").forEach(el=>el.onclick=()=>{
+    const m=(state.library||[]).find(x=>x.id===el.dataset.nudge);
+    if(m) openEditor(null,{name:m.name, type:(m.kind||"peptide")});
+  });
 }
 
 /* ---------- weight progress chart ---------- */
@@ -1318,6 +1383,10 @@ function openEditor(id, prefill){
 
     <div class="field"><label>Manufacturer / source <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input id="fMfr" placeholder="e.g. Thorne, Core Peptides" value="${esc(it.mfr||'')}"></div>
+    <div class="field"><label>Goals this targets <span style="font-weight:400;color:var(--muted)">(blank = auto-match)</span></label>
+      <div id="fTargets" style="display:flex;flex-wrap:wrap;gap:8px">
+        ${ACHIEVE_OPTS.map(o=>`<button type="button" class="mini-btn ${(it.targets||[]).includes(o)?'sel':''}" data-tgt="${esc(o)}">${esc(o)}</button>`).join("")}
+      </div></div>
     <div class="field"><label>When (timing)</label>
       <div class="seg" id="fSlots">
         ${SLOT_ORDER.map(s=>`<button data-v="${s}" class="${slotsFor(it).includes(s)?'sel':''}">${s}</button>`).join("")}
@@ -1449,6 +1518,7 @@ function openEditor(id, prefill){
   });
   // multi-select slots
   $("#fSlots").querySelectorAll("button").forEach(b=>b.onclick=()=>b.classList.toggle("sel"));
+  $("#fTargets").querySelectorAll("[data-tgt]").forEach(b=>b.onclick=()=>b.classList.toggle("sel"));
 
   $("#fSave").onclick=()=>{
     const name=$("#fName").value.trim(); if(!name){$("#fName").focus();return;}
@@ -1466,6 +1536,7 @@ function openEditor(id, prefill){
       rec.dose=doseString(d,calc); }
     else { rec.dose=$("#fDose").value.trim(); rec.doseAmt=undefined; }
     rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track; rec.inject=work.inject;
+    rec.targets=[...$("#fTargets").querySelectorAll(".sel")].map(b=>b.dataset.tgt);
     if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
       rec.capacity=Math.max(rec.capacity||0, rec.dosesLeft); }
     if(!id) state.items.push(rec);
@@ -1794,7 +1865,7 @@ document.querySelectorAll(".rate-btns").forEach(row=>{
 // numeric + note fields — auto-save on input (no re-render, keeps focus)
 $("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.value):null);
 $("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.target.value):null);
-  renderTrends(); $("#goalCard").innerHTML=buildGoalCard(); };
+  renderTrends(); renderGoalCard(); };
 $("#jWaist").oninput=e=>{ setMetric("waist", e.target.value?parseFloat(e.target.value):null);
   renderTrends(); $("#waistSummary").textContent=waistStat(); };
 $("#jNote").oninput=e=>setMetric("note", e.target.value);
