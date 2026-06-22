@@ -311,7 +311,13 @@
 <main>
   <!-- TODAY -->
   <section class="tab active" id="tab-today">
-    <div class="group-label">How are you feeling?</div>
+    <div class="group-label">Protocol</div>
+    <div class="progress-card">
+      <div class="progress-top"><b>Daily progress</b><span id="progTxt">0 / 0</span></div>
+      <div class="bar"><i id="progBar" style="width:0%"></i></div>
+    </div>
+    <div id="todayList"></div>
+    <div class="group-label" style="margin-top:18px">How are you feeling?</div>
     <div class="card" style="padding:6px 14px">
       <div class="rate-row"><span class="rate-label">Sleep</span>
         <div class="rate-btns" data-metric="sleepQ">
@@ -349,13 +355,6 @@
       </div>
     </div>
     <div id="weightChart"></div>
-    <div class="group-label">Protocol</div>
-    <div class="progress-card">
-      <div class="progress-top"><b>Daily progress</b><span id="progTxt">0 / 0</span></div>
-      <div class="bar"><i id="progBar" style="width:0%"></i></div>
-    </div>
-    <div id="todayList"></div>
-    <textarea class="note" id="jNote" placeholder="Notes — sides, observations, how you feel…" style="margin-top:14px"></textarea>
     <div id="goalCard" style="margin-top:18px"></div>
   </section>
 
@@ -777,7 +776,6 @@ function renderToday(){
     row.querySelectorAll("button").forEach(b=>b.classList.toggle("sel", +b.dataset.v===j[m]));
   });
   $("#jHours").value = j.hours ?? "";
-  $("#jNote").value = j.note ?? "";
   $("#jWeight").value = j.weight ?? "";
   $("#jWaist").value = j.waist ?? "";
   const metric = state.profile && state.profile.units==="metric";
@@ -2017,7 +2015,6 @@ $("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.targe
   renderTrends(); renderGoalCard(); };
 $("#jWaist").oninput=e=>{ setMetric("waist", e.target.value?parseFloat(e.target.value):null);
   renderTrends(); };
-$("#jNote").oninput=e=>setMetric("note", e.target.value);
 
 // first-launch disclaimer
 $("#dscAccept").onclick=()=>{
