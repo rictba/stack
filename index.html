@@ -308,7 +308,6 @@
 <main>
   <!-- TODAY -->
   <section class="tab active" id="tab-today">
-    <div id="goalCard"></div>
     <div class="group-label">How are you feeling?</div>
     <div class="card" style="padding:6px 14px">
       <div class="rate-row"><span class="rate-label">Sleep</span>
@@ -330,20 +329,21 @@
         <input id="jHours" type="number" inputmode="decimal" placeholder="—"><span class="unit">hours</span>
       </div>
     </div>
-    <div class="group-label">Weekly check-in</div>
-    <div class="card" style="padding:6px 14px 14px">
-      <div id="weeklyStatus" class="hint" style="margin:10px 2px 6px"></div>
-      <div class="j-grid">
-        <div class="j-field">
-          <label>Weight</label>
-          <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit" id="jWeightUnit">lb</span>
-        </div>
-        <div class="j-field">
-          <label>Waist</label>
-          <input id="jWaist" type="number" inputmode="decimal" placeholder="—"><span class="unit" id="jWaistUnit">in</span>
+    <div id="weeklyWrap">
+      <div class="group-label">Weekly check-in</div>
+      <div class="card" style="padding:6px 14px 14px">
+        <div id="weeklyStatus" class="hint" style="margin:10px 2px 6px"></div>
+        <div class="j-grid">
+          <div class="j-field">
+            <label>Weight</label>
+            <input id="jWeight" type="number" inputmode="decimal" placeholder="—"><span class="unit" id="jWeightUnit">lb</span>
+          </div>
+          <div class="j-field">
+            <label>Waist</label>
+            <input id="jWaist" type="number" inputmode="decimal" placeholder="—"><span class="unit" id="jWaistUnit">in</span>
+          </div>
         </div>
       </div>
-      <div id="waistSummary" class="item-sub" style="margin:10px 2px 0;color:var(--muted)"></div>
     </div>
     <div id="weightChart"></div>
     <div class="group-label">Protocol</div>
@@ -353,6 +353,7 @@
     </div>
     <div id="todayList"></div>
     <textarea class="note" id="jNote" placeholder="Notes — sides, observations, how you feel…" style="margin-top:14px"></textarea>
+    <div id="goalCard" style="margin-top:18px"></div>
   </section>
 
   <!-- PROTOCOL -->
@@ -779,10 +780,9 @@ function renderToday(){
   const metric = state.profile && state.profile.units==="metric";
   $("#jWeightUnit").textContent = metric ? "kg" : "lb";
   $("#jWaistUnit").textContent = metric ? "cm" : "in";
-  $("#weeklyStatus").textContent = (loggedThisWeek("weight")||loggedThisWeek("waist"))
-    ? "✓ Logged this week — edit anytime."
-    : "Log your weight & waist once a week.";
-  $("#waistSummary").textContent = waistStat();
+  const weeklyDone = loggedThisWeek("weight") || loggedThisWeek("waist");
+  $("#weeklyWrap").style.display = weeklyDone ? "none" : "";
+  $("#weeklyStatus").textContent = "Log your weight & waist once a week.";
   renderGoalCard();
   renderTrends();
 
@@ -1867,7 +1867,7 @@ $("#jHours").oninput=e=>setMetric("hours", e.target.value?parseFloat(e.target.va
 $("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.target.value):null);
   renderTrends(); renderGoalCard(); };
 $("#jWaist").oninput=e=>{ setMetric("waist", e.target.value?parseFloat(e.target.value):null);
-  renderTrends(); $("#waistSummary").textContent=waistStat(); };
+  renderTrends(); };
 $("#jNote").oninput=e=>setMetric("note", e.target.value);
 
 // first-launch disclaimer
