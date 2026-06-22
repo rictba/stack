@@ -191,7 +191,7 @@
   .hidden{display:none !important}
 
   /* disclaimer */
-  .dsc{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.78);display:none;
+  .dsc{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.78);display:none;
     align-items:center;justify-content:center;padding:20px;overflow-y:auto}
   .dsc.open{display:flex}
   .dsc-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
@@ -356,6 +356,7 @@
     </div>
     <div id="weightChart"></div>
     <div id="goalCard" style="margin-top:18px"></div>
+    <button id="todayDisc" style="display:block;margin:22px auto 4px;background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer">Disclaimer &amp; notices</button>
   </section>
 
   <!-- PROTOCOL -->
@@ -2021,6 +2022,7 @@ $("#dscAccept").onclick=()=>{
   if($("#dscHide").checked){ state.hideDisclaimer=true; save(); }
   $("#disclaimer").classList.remove("open");
 };
+$("#todayDisc").onclick=()=>$("#disclaimer").classList.add("open");
 function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList.add("open"); }
 
 /* ---------- onboarding (bright, multi-step) ---------- */
@@ -2201,7 +2203,8 @@ function renderOb(){
       <div style="text-align:left;max-width:300px;margin:6px auto 0">
         ${steps.map((t,i)=>`<div class="ob-rdy" data-rdy="${i}"><span class="ck">✓</span><span>${t}</span></div>`).join("")}
       </div>`;
-    footHtml=`<button class="ob-btn" id="obEnter" disabled>Enter Stack</button>`;
+    footHtml=`<button class="ob-btn" id="obEnter" disabled>Enter Stack</button>
+      <button class="ob-skip" id="obDisc">View disclaimers</button>`;
   }
 
   body.innerHTML=html; foot.innerHTML=footHtml;
@@ -2227,6 +2230,7 @@ function renderOb(){
   };
   const skip=$("#obSkip"); if(skip) skip.onclick=obNext;
   const later=$("#obLater"); if(later) later.onclick=obNext;
+  const disc=$("#obDisc"); if(disc) disc.onclick=()=>$("#disclaimer").classList.add("open");
   if(step==="ready"){
     const rows=[...body.querySelectorAll(".ob-rdy")];
     rows.forEach((r,i)=>setTimeout(()=>r.classList.add("on"), 250+i*320));
