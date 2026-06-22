@@ -1580,7 +1580,7 @@ const PEPTIDE_CATALOG = [
   {n:"GHRP-6",t:"Growth hormone",d:"GH secretagogue with strong hunger stimulus.",u:"GH release, appetite",ds:"100–300 mcg SubQ"},
   {n:"Hexarelin",t:"Growth hormone",d:"Very potent GHRP (desensitizes with overuse).",u:"GH release",ds:"100 mcg SubQ"},
   {n:"Tesamorelin",t:"Growth hormone",d:"Stabilized GHRH; reduces visceral fat.",u:"Belly fat, GH/IGF-1",ds:"1–2 mg/day SubQ"},
-  {n:"MK-677 (Ibutamoren)",t:"Growth hormone",d:"Oral ghrelin-mimetic GH secretagogue.",u:"GH/IGF-1, appetite, sleep",ds:"10–25 mg/day oral"},
+  {n:"MK-677 (Ibutamoren)",t:"Other / non-peptide",d:"Oral small-molecule GH secretagogue (not a peptide).",u:"GH/IGF-1, appetite, sleep",ds:"10–25 mg/day oral"},
   {n:"Macimorelin",t:"Growth hormone",d:"Oral ghrelin agonist used for GH stimulation testing.",u:"GH stimulation",ds:"Per protocol"},
   {n:"Fragment 176-191 (HGH Frag)",t:"Growth hormone",d:"GH fragment targeting fat metabolism.",u:"Fat loss",ds:"250–500 mcg SubQ"},
   {n:"AOD-9604",t:"Growth hormone",d:"Modified GH fragment for fat metabolism.",u:"Fat loss, cartilage",ds:"300 mcg/day SubQ"},
@@ -1606,11 +1606,11 @@ const PEPTIDE_CATALOG = [
   {n:"Cagrilintide",t:"Metabolic / GLP",d:"Long-acting amylin analog.",u:"Appetite, weight loss",ds:"Weekly SubQ"},
   {n:"Survodutide",t:"Metabolic / GLP",d:"GLP-1 / glucagon dual agonist.",u:"Weight loss, liver fat",ds:"Weekly SubQ"},
   {n:"Mazdutide",t:"Metabolic / GLP",d:"GLP-1 / glucagon dual agonist.",u:"Weight loss, glucose",ds:"Weekly SubQ"},
-  {n:"5-Amino-1MQ",t:"Metabolic / GLP",d:"NNMT inhibitor affecting fat-cell metabolism.",u:"Fat loss, metabolism",ds:"50–150 mg/day oral"},
+  {n:"5-Amino-1MQ",t:"Other / non-peptide",d:"Small-molecule NNMT inhibitor (not a peptide).",u:"Fat loss, metabolism",ds:"50–150 mg/day oral"},
   {n:"MOTS-c",t:"Metabolic / GLP",d:"Mitochondrial-derived peptide.",u:"Metabolism, energy, insulin sensitivity",ds:"Protocol varies SubQ"},
   {n:"SLU-PP-332",t:"Metabolic / GLP",d:"ERR agonist (research compound).",u:"Endurance, metabolism",ds:"Research"},
   {n:"Adipotide (FTPP)",t:"Metabolic / GLP",d:"Targets fat-tissue blood supply (research).",u:"Fat loss",ds:"Research"},
-  {n:"Tesofensine",t:"Metabolic / GLP",d:"Triple monoamine reuptake inhibitor.",u:"Appetite suppression",ds:"Oral, varies"},
+  {n:"Tesofensine",t:"Other / non-peptide",d:"Small-molecule triple reuptake inhibitor (not a peptide).",u:"Appetite suppression",ds:"Oral, varies"},
   // Nootropic / mood
   {n:"Semax",t:"Nootropic / mood",d:"ACTH-derived nootropic peptide.",u:"Focus, memory, neuroprotection",ds:"300–600 mcg/day intranasal"},
   {n:"N-Acetyl Semax Amidate",t:"Nootropic / mood",d:"Longer-acting Semax analog.",u:"Focus, mental energy",ds:"Intranasal, varies"},
@@ -1629,7 +1629,7 @@ const PEPTIDE_CATALOG = [
   {n:"Humanin",t:"Longevity",d:"Mitochondrial-derived cytoprotective peptide.",u:"Cellular protection, metabolism",ds:"Research"},
   {n:"SS-31 (Elamipretide)",t:"Longevity",d:"Cardiolipin-targeting mitochondrial peptide.",u:"Mitochondrial function",ds:"SubQ, varies"},
   {n:"GDF-11",t:"Longevity",d:"Growth differentiation factor 11 (research).",u:"Rejuvenation research",ds:"Research"},
-  {n:"NAD+",t:"Longevity",d:"Coenzyme central to cellular energy.",u:"Energy, cellular repair",ds:"IV/SubQ, varies"},
+  {n:"NAD+",t:"Other / non-peptide",d:"Cellular-energy coenzyme (not a peptide).",u:"Energy, cellular repair",ds:"IV/SubQ, varies"},
   {n:"Glutathione",t:"Longevity",d:"Master antioxidant tripeptide.",u:"Detox, antioxidant, skin",ds:"IV/SubQ/oral"},
   // Bioregulators (Khavinson)
   {n:"Pinealon",t:"Bioregulator",d:"Short peptide bioregulator for the brain.",u:"Cognition, neuroprotection",ds:"Course-based"},
@@ -1652,7 +1652,7 @@ const PEPTIDE_CATALOG = [
   {n:"Oxytocin",t:"Sexual health",d:"Bonding and mood hormone.",u:"Mood, bonding, libido",ds:"Intranasal/SubQ"},
   {n:"Gonadorelin",t:"Sexual health",d:"GnRH analog stimulating LH/FSH.",u:"Testicular function, fertility",ds:"SubQ, varies"},
   {n:"Triptorelin",t:"Sexual health",d:"GnRH agonist.",u:"HPG-axis protocols",ds:"Per protocol"},
-  {n:"HCG",t:"Sexual health",d:"LH analog supporting testicular function.",u:"Testosterone, fertility",ds:"IU SubQ, varies"},
+  {n:"HCG",t:"Other / non-peptide",d:"Glycoprotein hormone, not a small peptide.",u:"Testosterone, fertility",ds:"IU SubQ, varies"},
   // Immune & gut
   {n:"Thymosin Alpha-1",t:"Immune & gut",d:"Thymic peptide that modulates immunity.",u:"Immune resilience",ds:"~1.6 mg 2×/week SubQ"},
   {n:"Thymogen",t:"Immune & gut",d:"Glu-Trp dipeptide immune modulator.",u:"Immune support",ds:"Protocol varies"},
@@ -1672,7 +1672,8 @@ const PEPTIDE_CATALOG = [
 function openCatalog(){
   const inLib = n => (state.library||[]).some(p=>(p.name||"").toLowerCase()===n.toLowerCase());
   const groups={}; PEPTIDE_CATALOG.forEach(m=>{ (groups[m.t]=groups[m.t]||[]).push(m); });
-  const order=Object.keys(groups);
+  const CATALOG_ORDER=["Growth hormone","Healing & recovery","Metabolic / GLP","Nootropic / mood","Longevity","Bioregulator","Sexual health","Immune & gut","Muscle & IGF","Skin & hair","Other / non-peptide"];
+  const order=CATALOG_ORDER.filter(g=>groups[g]).concat(Object.keys(groups).filter(g=>!CATALOG_ORDER.includes(g)));
   const rows=order.map(g=>`
     <div class="lab-grp" data-grp-head>${esc(g)}</div>
     ${groups[g].map(m=>`<div class="cat-row" data-row="${esc(m.n.toLowerCase())}">
