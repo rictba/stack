@@ -1668,6 +1668,23 @@ const PEPTIDE_CATALOG = [
   {n:"Matrixyl (Palmitoyl Pentapeptide)",t:"Skin & hair",d:"Collagen-stimulating topical peptide.",u:"Collagen, firmness (topical)",ds:"Topical"},
   {n:"Melitane",t:"Skin & hair",d:"α-MSH analog for topical tanning.",u:"Tanning (topical)",ds:"Topical"},
 ];
+/* ---------- monetization (dormant until PAYWALL_ENABLED = true) ---------- */
+const PAYWALL_ENABLED = false;   // master switch — flip to true to enforce the free limit
+const FREE_LIMIT = 3;            // max Library references on the free tier
+function isPro(){ return !!(state && state.pro); }
+function libCount(){ return (state.library||[]).length; }
+function canAddLibrary(){ return !PAYWALL_ENABLED || isPro() || libCount() < FREE_LIMIT; }
+function showUpgrade(){
+  $("#sheet").innerHTML = `
+    <h2>Upgrade to Pro</h2>
+    <p class="hint" style="margin:-4px 0 16px;line-height:1.6">The free version includes up to ${FREE_LIMIT} references. Upgrade to Pro for unlimited peptides &amp; supplements, the full peptide catalog, Labs, and trends.</p>
+    <button class="btn" id="upBuy">Upgrade — coming soon</button>
+    <button class="btn ghost" id="upClose">Maybe later</button>`;
+  $("#upBuy").onclick=()=>alert("Payments are coming soon.");
+  $("#upClose").onclick=closeSheet;
+  $("#scrim").classList.add("open");
+}
+
 function openCatalog(){
   const inLib = n => (state.library||[]).some(p=>(p.name||"").toLowerCase()===n.toLowerCase());
   const groups={}; PEPTIDE_CATALOG.forEach(m=>{ (groups[m.t]=groups[m.t]||[]).push(m); });
@@ -1702,6 +1719,7 @@ function openCatalog(){
     if(inLib(m.n)){
       state.library=state.library.filter(p=>(p.name||"").toLowerCase()!==m.n.toLowerCase());
     } else {
+      if(!canAddLibrary()){ showUpgrade(); return; }
       state.library.push({id:uid(), col:COLORS[state.library.length%COLORS.length], kind:"peptide",
         name:m.n, tag:m.t||"", desc:m.d||"", does:m.u||"", dose:m.ds||"", half:"", duration:""});
     }
@@ -1783,6 +1801,7 @@ function openLibEditor(id){
   seg("#lfKind", v=>{ lfKind=v; });
   $("#lfSave").onclick=()=>{
     const name=$("#lf_name").value.trim(); if(!name){$("#lf_name").focus();return;}
+    if(!id && !canAddLibrary()){ showUpgrade(); return; }
     const rec = id ? state.library.find(x=>x.id===id) : {id:uid(), col:p.col};
     ["name","tag","desc","does","dose","half","duration"].forEach(k=>rec[k]=$("#lf_"+k).value.trim());
     rec.kind = lfKind;
