@@ -116,7 +116,10 @@
   .lab-row input{width:96px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px 11px;text-align:right;font-size:15px}
   .lab-row .un{width:52px;font-size:12px;color:var(--muted)}
   .lab-pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
-  #labSearch{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:11px 14px;font-size:15px}
+  #labSearch,#catSearch{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:11px 14px;font-size:15px}
+  .cat-row{display:flex;gap:10px;align-items:flex-start;padding:11px 2px;border-bottom:1px solid var(--line)}
+  .cat-add{flex:none;align-self:center;font-size:12px;font-weight:700;border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:999px;padding:6px 12px;white-space:nowrap}
+  .cat-add.added{background:var(--accent);color:#fff;border-color:var(--accent)}
 
   .inv-row{display:flex;align-items:center;gap:14px}
   .inv-meter{flex:1}
@@ -1566,14 +1569,158 @@ function emptyState(icon,title,body){
   return `<div class="empty"><div class="big">${icon}</div><b>${title}</b><p>${body}</p></div>`; }
 
 /* ---------- library ---------- */
+/* ---------- popular peptide catalog ---------- */
+const PEPTIDE_CATALOG = [
+  // Growth hormone
+  {n:"Sermorelin",t:"Growth hormone",d:"GHRH analog that raises natural GH/IGF-1.",u:"Anti-aging, sleep, recovery",ds:"100–300 mcg SubQ at night"},
+  {n:"CJC-1295 (no DAC)",t:"Growth hormone",d:"Short-acting GHRH analog, paired with a GHRP.",u:"Recovery, body composition, sleep",ds:"100 mcg 1–3×/day SubQ"},
+  {n:"CJC-1295 (DAC)",t:"Growth hormone",d:"Long-acting GHRH with drug affinity complex.",u:"Sustained GH elevation",ds:"~2 mg/week SubQ"},
+  {n:"Ipamorelin",t:"Growth hormone",d:"Selective GHRP with a clean GH pulse.",u:"Recovery, lean mass, sleep",ds:"200–300 mcg 1–3×/day SubQ"},
+  {n:"GHRP-2",t:"Growth hormone",d:"Potent GH secretagogue (raises appetite/prolactin).",u:"GH release, appetite",ds:"100–300 mcg SubQ"},
+  {n:"GHRP-6",t:"Growth hormone",d:"GH secretagogue with strong hunger stimulus.",u:"GH release, appetite",ds:"100–300 mcg SubQ"},
+  {n:"Hexarelin",t:"Growth hormone",d:"Very potent GHRP (desensitizes with overuse).",u:"GH release",ds:"100 mcg SubQ"},
+  {n:"Tesamorelin",t:"Growth hormone",d:"Stabilized GHRH; reduces visceral fat.",u:"Belly fat, GH/IGF-1",ds:"1–2 mg/day SubQ"},
+  {n:"MK-677 (Ibutamoren)",t:"Growth hormone",d:"Oral ghrelin-mimetic GH secretagogue.",u:"GH/IGF-1, appetite, sleep",ds:"10–25 mg/day oral"},
+  {n:"Macimorelin",t:"Growth hormone",d:"Oral ghrelin agonist used for GH stimulation testing.",u:"GH stimulation",ds:"Per protocol"},
+  {n:"Fragment 176-191 (HGH Frag)",t:"Growth hormone",d:"GH fragment targeting fat metabolism.",u:"Fat loss",ds:"250–500 mcg SubQ"},
+  {n:"AOD-9604",t:"Growth hormone",d:"Modified GH fragment for fat metabolism.",u:"Fat loss, cartilage",ds:"300 mcg/day SubQ"},
+  // Healing & recovery
+  {n:"BPC-157",t:"Healing & recovery",d:"Gastric peptide studied for soft-tissue and gut repair.",u:"Tendon, ligament, gut healing",ds:"250–500 mcg 1–2×/day SubQ"},
+  {n:"TB-500 (Thymosin β4)",t:"Healing & recovery",d:"Thymosin β4 fragment involved in repair and cell migration.",u:"Recovery, flexibility",ds:"2–2.5 mg 2×/week SubQ"},
+  {n:"Pentadeca Arginate (PDA)",t:"Healing & recovery",d:"Stabilized BPC-157 analog (arginate salt).",u:"Tissue repair, inflammation",ds:"Protocol varies"},
+  {n:"GHK-Cu",t:"Healing & recovery",d:"Copper-binding tripeptide.",u:"Skin, collagen, hair, repair",ds:"1–2 mg/day SubQ or topical"},
+  {n:"KPV",t:"Healing & recovery",d:"Anti-inflammatory α-MSH fragment.",u:"Gut and systemic inflammation",ds:"500 mcg 1–2×/day oral"},
+  {n:"ARA-290 (Cibinetide)",t:"Healing & recovery",d:"Non-erythropoietic EPO derivative.",u:"Neuropathy, inflammation",ds:"Protocol varies"},
+  {n:"LL-37",t:"Healing & recovery",d:"Antimicrobial host-defense peptide.",u:"Immune, biofilm, wound support",ds:"Protocol varies"},
+  {n:"VIP (Aviptadil)",t:"Healing & recovery",d:"Vasoactive intestinal peptide.",u:"CIRS, lung, inflammation",ds:"Intranasal, varies"},
+  {n:"Larazotide",t:"Healing & recovery",d:"Tight-junction regulator for the gut barrier.",u:"Leaky gut, barrier support",ds:"Oral, varies"},
+  // Metabolic / GLP
+  {n:"Semaglutide",t:"Metabolic / GLP",d:"GLP-1 receptor agonist.",u:"Weight loss, glucose control",ds:"Weekly SubQ, titrated"},
+  {n:"Tirzepatide",t:"Metabolic / GLP",d:"Dual GLP-1 / GIP agonist.",u:"Weight loss, glucose control",ds:"Weekly SubQ, titrated"},
+  {n:"Retatrutide",t:"Metabolic / GLP",d:"Triple GLP-1 / GIP / glucagon agonist.",u:"Significant weight loss",ds:"Weekly SubQ, titrated"},
+  {n:"Liraglutide",t:"Metabolic / GLP",d:"Daily GLP-1 receptor agonist.",u:"Weight loss, glucose control",ds:"Daily SubQ"},
+  {n:"Dulaglutide",t:"Metabolic / GLP",d:"Weekly GLP-1 receptor agonist.",u:"Glucose control, weight",ds:"Weekly SubQ"},
+  {n:"Exenatide",t:"Metabolic / GLP",d:"GLP-1 receptor agonist.",u:"Glucose control",ds:"Per protocol"},
+  {n:"Efpeglenatide",t:"Metabolic / GLP",d:"Long-acting GLP-1 agonist.",u:"Glucose control, weight",ds:"Weekly SubQ"},
+  {n:"Pemvidutide",t:"Metabolic / GLP",d:"GLP-1 / glucagon dual agonist.",u:"Weight loss, liver fat",ds:"Weekly SubQ"},
+  {n:"Cagrilintide",t:"Metabolic / GLP",d:"Long-acting amylin analog.",u:"Appetite, weight loss",ds:"Weekly SubQ"},
+  {n:"Survodutide",t:"Metabolic / GLP",d:"GLP-1 / glucagon dual agonist.",u:"Weight loss, liver fat",ds:"Weekly SubQ"},
+  {n:"Mazdutide",t:"Metabolic / GLP",d:"GLP-1 / glucagon dual agonist.",u:"Weight loss, glucose",ds:"Weekly SubQ"},
+  {n:"5-Amino-1MQ",t:"Metabolic / GLP",d:"NNMT inhibitor affecting fat-cell metabolism.",u:"Fat loss, metabolism",ds:"50–150 mg/day oral"},
+  {n:"MOTS-c",t:"Metabolic / GLP",d:"Mitochondrial-derived peptide.",u:"Metabolism, energy, insulin sensitivity",ds:"Protocol varies SubQ"},
+  {n:"SLU-PP-332",t:"Metabolic / GLP",d:"ERR agonist (research compound).",u:"Endurance, metabolism",ds:"Research"},
+  {n:"Adipotide (FTPP)",t:"Metabolic / GLP",d:"Targets fat-tissue blood supply (research).",u:"Fat loss",ds:"Research"},
+  {n:"Tesofensine",t:"Metabolic / GLP",d:"Triple monoamine reuptake inhibitor.",u:"Appetite suppression",ds:"Oral, varies"},
+  // Nootropic / mood
+  {n:"Semax",t:"Nootropic / mood",d:"ACTH-derived nootropic peptide.",u:"Focus, memory, neuroprotection",ds:"300–600 mcg/day intranasal"},
+  {n:"N-Acetyl Semax Amidate",t:"Nootropic / mood",d:"Longer-acting Semax analog.",u:"Focus, mental energy",ds:"Intranasal, varies"},
+  {n:"Selank",t:"Nootropic / mood",d:"Anxiolytic peptide based on tuftsin.",u:"Calm focus, stress, anxiety",ds:"250–500 mcg/day intranasal"},
+  {n:"N-Acetyl Selank Amidate",t:"Nootropic / mood",d:"Longer-acting Selank analog.",u:"Calm focus, anxiety",ds:"Intranasal, varies"},
+  {n:"Dihexa",t:"Nootropic / mood",d:"Angiotensin-derived; synaptogenesis (research).",u:"Cognition, memory",ds:"Research"},
+  {n:"Cerebrolysin",t:"Nootropic / mood",d:"Neurotrophic peptide mixture.",u:"Neuroprotection, recovery",ds:"IM, course-based"},
+  {n:"P21 (P021)",t:"Nootropic / mood",d:"Neurogenesis compound (research).",u:"Cognition, neurogenesis",ds:"Research"},
+  {n:"PE-22-28",t:"Nootropic / mood",d:"TREK-1 modulator (research).",u:"Mood, antidepressant",ds:"Research"},
+  {n:"DSIP",t:"Nootropic / mood",d:"Delta sleep-inducing peptide.",u:"Sleep, stress",ds:"Before bed, varies"},
+  // Longevity
+  {n:"Epithalon",t:"Longevity",d:"Telomerase/pineal peptide used in short cycles.",u:"Anti-aging, sleep, stress",ds:"5–10 mg/day SubQ, 10-day cycle"},
+  {n:"Thymalin",t:"Longevity",d:"Thymic peptide for immune regulation.",u:"Immune, aging",ds:"Course-based"},
+  {n:"Thymulin",t:"Longevity",d:"Zinc-dependent thymic hormone.",u:"Immune modulation",ds:"Protocol varies"},
+  {n:"FOXO4-DRI",t:"Longevity",d:"Senolytic peptide (research).",u:"Senescent cell clearance",ds:"Research"},
+  {n:"Humanin",t:"Longevity",d:"Mitochondrial-derived cytoprotective peptide.",u:"Cellular protection, metabolism",ds:"Research"},
+  {n:"SS-31 (Elamipretide)",t:"Longevity",d:"Cardiolipin-targeting mitochondrial peptide.",u:"Mitochondrial function",ds:"SubQ, varies"},
+  {n:"GDF-11",t:"Longevity",d:"Growth differentiation factor 11 (research).",u:"Rejuvenation research",ds:"Research"},
+  {n:"NAD+",t:"Longevity",d:"Coenzyme central to cellular energy.",u:"Energy, cellular repair",ds:"IV/SubQ, varies"},
+  {n:"Glutathione",t:"Longevity",d:"Master antioxidant tripeptide.",u:"Detox, antioxidant, skin",ds:"IV/SubQ/oral"},
+  // Bioregulators (Khavinson)
+  {n:"Pinealon",t:"Bioregulator",d:"Short peptide bioregulator for the brain.",u:"Cognition, neuroprotection",ds:"Course-based"},
+  {n:"Cortagen",t:"Bioregulator",d:"Brain-cortex peptide bioregulator.",u:"Cognition, recovery",ds:"Course-based"},
+  {n:"Cardiogen",t:"Bioregulator",d:"Heart peptide bioregulator.",u:"Cardiovascular support",ds:"Course-based"},
+  {n:"Vesugen",t:"Bioregulator",d:"Vascular peptide bioregulator.",u:"Vascular health",ds:"Course-based"},
+  {n:"Vilon",t:"Bioregulator",d:"Immune/thymus peptide bioregulator.",u:"Immune support",ds:"Course-based"},
+  {n:"Prostamax",t:"Bioregulator",d:"Prostate peptide bioregulator.",u:"Prostate health",ds:"Course-based"},
+  {n:"Bronchogen",t:"Bioregulator",d:"Bronchial peptide bioregulator.",u:"Respiratory support",ds:"Course-based"},
+  {n:"Vladonix",t:"Bioregulator",d:"Thymus peptide bioregulator.",u:"Immune support",ds:"Course-based"},
+  {n:"Ovagen",t:"Bioregulator",d:"Liver/GI peptide bioregulator.",u:"Liver, GI support",ds:"Course-based"},
+  {n:"Pancragen",t:"Bioregulator",d:"Pancreas peptide bioregulator.",u:"Pancreatic support",ds:"Course-based"},
+  {n:"Testagen",t:"Bioregulator",d:"Testes peptide bioregulator.",u:"Reproductive support",ds:"Course-based"},
+  {n:"Sigumir",t:"Bioregulator",d:"Cartilage/joint peptide bioregulator.",u:"Joint, cartilage support",ds:"Course-based"},
+  // Sexual health
+  {n:"PT-141 (Bremelanotide)",t:"Sexual health",d:"Melanocortin agonist for libido.",u:"Libido, arousal",ds:"~1–2 mg SubQ before activity"},
+  {n:"Melanotan I (Afamelanotide)",t:"Sexual health",d:"Melanocortin agonist for pigmentation.",u:"Tanning, photoprotection",ds:"SubQ, titrate"},
+  {n:"Melanotan II",t:"Sexual health",d:"Melanocortin agonist (tan + libido).",u:"Tanning, libido",ds:"SubQ, titrate"},
+  {n:"Kisspeptin-10",t:"Sexual health",d:"Stimulates LH/FSH and testosterone.",u:"HPG-axis, fertility",ds:"SubQ, varies"},
+  {n:"Oxytocin",t:"Sexual health",d:"Bonding and mood hormone.",u:"Mood, bonding, libido",ds:"Intranasal/SubQ"},
+  {n:"Gonadorelin",t:"Sexual health",d:"GnRH analog stimulating LH/FSH.",u:"Testicular function, fertility",ds:"SubQ, varies"},
+  {n:"Triptorelin",t:"Sexual health",d:"GnRH agonist.",u:"HPG-axis protocols",ds:"Per protocol"},
+  {n:"HCG",t:"Sexual health",d:"LH analog supporting testicular function.",u:"Testosterone, fertility",ds:"IU SubQ, varies"},
+  // Immune & gut
+  {n:"Thymosin Alpha-1",t:"Immune & gut",d:"Thymic peptide that modulates immunity.",u:"Immune resilience",ds:"~1.6 mg 2×/week SubQ"},
+  {n:"Thymogen",t:"Immune & gut",d:"Glu-Trp dipeptide immune modulator.",u:"Immune support",ds:"Protocol varies"},
+  // Muscle & IGF
+  {n:"IGF-1 LR3",t:"Muscle & IGF",d:"Long-acting insulin-like growth factor 1.",u:"Muscle growth, recovery",ds:"SubQ, varies"},
+  {n:"IGF-1 DES",t:"Muscle & IGF",d:"Short, potent IGF-1 variant.",u:"Localized muscle growth",ds:"SubQ, varies"},
+  {n:"PEG-MGF",t:"Muscle & IGF",d:"Pegylated mechano growth factor.",u:"Muscle repair, growth",ds:"SubQ, varies"},
+  {n:"MGF",t:"Muscle & IGF",d:"Mechano growth factor for local repair.",u:"Localized repair",ds:"SubQ, varies"},
+  {n:"Follistatin-344",t:"Muscle & IGF",d:"Myostatin-inhibiting protein (research).",u:"Muscle growth",ds:"Research"},
+  {n:"ACE-031",t:"Muscle & IGF",d:"Myostatin trap (research, discontinued).",u:"Muscle growth",ds:"Research"},
+  // Skin & hair
+  {n:"Snap-8",t:"Skin & hair",d:"Acetyl octapeptide for topical wrinkle reduction.",u:"Wrinkles (topical)",ds:"Topical"},
+  {n:"Argireline (Acetyl Hexapeptide-8)",t:"Skin & hair",d:"Topical peptide with botox-like effect.",u:"Expression lines (topical)",ds:"Topical"},
+  {n:"Matrixyl (Palmitoyl Pentapeptide)",t:"Skin & hair",d:"Collagen-stimulating topical peptide.",u:"Collagen, firmness (topical)",ds:"Topical"},
+  {n:"Melitane",t:"Skin & hair",d:"α-MSH analog for topical tanning.",u:"Tanning (topical)",ds:"Topical"},
+];
+function openCatalog(){
+  const inLib = n => (state.library||[]).some(p=>(p.name||"").toLowerCase()===n.toLowerCase());
+  const groups={}; PEPTIDE_CATALOG.forEach(m=>{ (groups[m.t]=groups[m.t]||[]).push(m); });
+  const order=Object.keys(groups);
+  const rows=order.map(g=>`
+    <div class="lab-grp" data-grp-head>${esc(g)}</div>
+    ${groups[g].map(m=>`<div class="cat-row" data-row="${esc(m.n.toLowerCase())}">
+      <div style="flex:1">
+        <div class="item-name" style="font-size:14px">${esc(m.n)}</div>
+        <div class="item-sub" style="white-space:normal">${esc(m.d||"")}</div>
+      </div>
+      <button class="cat-add ${inLib(m.n)?'added':''}" data-add="${esc(m.n)}">${inLib(m.n)?"✓ Added":"+ Add"}</button>
+    </div>`).join("")}`).join("");
+  $("#sheet").innerHTML=`
+    <h2>Popular peptides</h2>
+    <div class="hint" style="margin:-6px 0 12px">Tap <b>+ Add</b> to drop one into your Library. Reference only — verify everything independently.</div>
+    <input id="catSearch" placeholder="Search peptides…" style="margin-bottom:6px">
+    <div id="catRows">${rows}</div>
+    <button class="btn" id="catDone" style="margin-top:12px">Done</button>`;
+  $("#catSearch").oninput=e=>{
+    const q=e.target.value.trim().toLowerCase();
+    $("#catRows").querySelectorAll("[data-row]").forEach(r=>{ r.style.display=r.dataset.row.includes(q)?"":"none"; });
+    $("#catRows").querySelectorAll("[data-grp-head]").forEach(hd=>{
+      let n=hd.nextElementSibling, any=false;
+      while(n && n.hasAttribute && n.hasAttribute("data-row")){ if(n.style.display!=="none") any=true; n=n.nextElementSibling; }
+      hd.style.display=any?"":"none";
+    });
+  };
+  $("#catRows").querySelectorAll("[data-add]").forEach(btn=>btn.onclick=()=>{
+    const m=PEPTIDE_CATALOG.find(x=>x.n===btn.dataset.add); if(!m) return;
+    if(inLib(m.n)){
+      state.library=state.library.filter(p=>(p.name||"").toLowerCase()!==m.n.toLowerCase());
+    } else {
+      state.library.push({id:uid(), col:COLORS[state.library.length%COLORS.length], kind:"peptide",
+        name:m.n, tag:m.t||"", desc:m.d||"", does:m.u||"", dose:m.ds||"", half:"", duration:""});
+    }
+    save();
+    const added=inLib(m.n);
+    btn.classList.toggle("added",added); btn.textContent=added?"✓ Added":"+ Add";
+  });
+  $("#catDone").onclick=()=>{ closeSheet(); renderLibrary(); };
+  $("#scrim").classList.add("open");
+}
 function renderLibrary(){
   $("#libTabs").querySelectorAll("button").forEach(b=>b.classList.toggle("sel", b.dataset.v===libKind));
   $("#libHeading").textContent = libKind==="peptide" ? "Peptide library" : "Supplement library";
   const list=$("#libList");
   const entries = state.library.filter(p=>(p.kind||"peptide")===libKind);
   const addLabel = libKind==="peptide" ? "+ Add peptide" : "+ Add supplement";
-  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 12px">${addLabel}</button>` +
-    (entries.length===0 ? emptyState("📖",`No ${libKind}s yet`,`Tap “${addLabel}” to add a ${libKind} reference.`) :
+  const catBtn = libKind==="peptide" ? `<button class="btn" id="libCatalog" style="margin:0 0 12px">✨ Browse popular peptides</button>` : "";
+  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 10px">${addLabel}</button>` + catBtn +
+    (entries.length===0 ? emptyState("📖",`No ${libKind}s yet`,`Tap “${addLabel}”${libKind==="peptide"?" or browse the popular list":""} to add a ${libKind} reference.`) :
     entries.map(p=>`
     <div class="card" style="padding:14px">
       <div class="card-head" style="align-items:flex-start">
@@ -1594,6 +1741,7 @@ function renderLibrary(){
       </div>
     </div>`).join(""));
   $("#libAdd").onclick=()=>openLibEditor(null);
+  if($("#libCatalog")) $("#libCatalog").onclick=openCatalog;
   list.querySelectorAll("[data-libadd]").forEach(el=>el.onclick=()=>{
     const p=state.library.find(x=>x.id===el.dataset.libadd);
     openEditor(null, {name:p.name, type:(p.kind||"peptide")});
