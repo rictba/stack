@@ -511,6 +511,7 @@
   <div class="ob-foot" id="obFoot"></div>
 </div>
 
+<script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
 <script>
 "use strict";
 const KEY = "stack.data.v1";
@@ -1836,7 +1837,12 @@ function showUpgrade(){
     <button class="btn ghost" id="upCode">I have an unlock code</button>
     <button class="btn ghost" id="upClose">Maybe later</button>
     <p class="hint" style="text-align:center;margin-top:10px">After purchase, Lemon Squeezy emails your code — paste it above.</p>`;
-  $("#upBuy").onclick=()=>{ if(CHECKOUT_URL) window.open(CHECKOUT_URL,"_blank"); else alert("Checkout goes live soon."); };
+  $("#upBuy").onclick=()=>{
+    if(!CHECKOUT_URL){ alert("Checkout goes live soon."); return; }
+    const url = CHECKOUT_URL + (CHECKOUT_URL.includes("?")?"&":"?") + "embed=1";
+    if(window.LemonSqueezy && window.LemonSqueezy.Url){ window.LemonSqueezy.Url.Open(url); }
+    else { window.open(CHECKOUT_URL, "_blank"); }
+  };
   $("#upCode").onclick=async ()=>{
     const key=prompt("Enter your unlock code"); if(!key||!key.trim()) return;
     const btn=$("#upCode"); btn.textContent="Activating…"; btn.disabled=true;
@@ -2484,6 +2490,20 @@ const ALWAYS_SHOW_INTRO = false;
 
 render();
 if(ALWAYS_SHOW_INTRO || !state.onboarded) startOnboarding(); else maybeDisclaimer();
+
+// Lemon Squeezy overlay checkout
+window.addEventListener("load", ()=>{
+  try{
+    if(window.createLemonSqueezy){
+      window.createLemonSqueezy();
+      window.LemonSqueezy.Setup({ eventHandler:(ev)=>{
+        if(ev && ev.event==="Checkout.Success"){
+          alert("Purchase complete! Check your email for your unlock code, then tap “I have an unlock code” to activate.");
+        }
+      }});
+    }
+  }catch(e){}
+});
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
