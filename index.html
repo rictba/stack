@@ -1347,6 +1347,29 @@ function renderGoalCard(){
     if(m) openEditor(null,{name:m.name, type:(m.kind||"peptide")});
   });
 }
+/* ---------- goal-reached celebration (fires once per goal value) ---------- */
+function checkGoalHit(field, goalVal, flagKey, label, unit){
+  if(goalVal==null || goalVal==="") return false;
+  goalVal=+goalVal;
+  const series=metricSeries(field); if(!series.length) return false;
+  const cur=series[series.length-1].w, first=series[0].w;
+  const reached = goalVal<=first ? cur<=goalVal : cur>=goalVal;
+  const p=state.profile||{};
+  if(reached && p[flagKey]!==goalVal){
+    p[flagKey]=goalVal; save();
+    showCelebrate({ icon:"🏆", title:"Goal reached!",
+      body:`You hit your ${label} goal of <b>${goalVal} ${unit}</b>. Incredible work — your consistency paid off.`,
+      btn:"🎉 Nice" });
+    return true;
+  }
+  return false;
+}
+function checkGoals(){
+  const p=state.profile; if(!p) return;
+  const wu = p.units==="metric"?"kg":"lb", wau = p.units==="metric"?"cm":"in";
+  if(checkGoalHit("weight", p.goalWeight, "weightGoalHit", "weight", wu)) return;
+  checkGoalHit("waist", p.waistGoal, "waistGoalHit", "waist", wau);
+}
 
 /* ---------- weight progress chart ---------- */
 function metricSeries(field){
@@ -2244,6 +2267,8 @@ $("#jWeight").oninput=e=>{ setMetric("weight", e.target.value?parseFloat(e.targe
   renderTrends(); renderGoalCard(); };
 $("#jWaist").oninput=e=>{ setMetric("waist", e.target.value?parseFloat(e.target.value):null);
   renderTrends(); };
+$("#jWeight").onchange=checkGoals;
+$("#jWaist").onchange=checkGoals;
 
 // first-launch disclaimer
 $("#dscAccept").onclick=()=>{
