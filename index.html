@@ -621,6 +621,11 @@ const LIBRARY = [
     does:"Supports energy metabolism, methylation, nervous system, and mood. Activated forms are easier to use, especially with MTHFR variants.",
     dose:"2 capsules daily with food. Per serving: B1 100mg, B2 20mg, B3 30mg, B5 50mg, B6 20mg, B9 1700mcg DFE, B12 1000mcg, biotin 2000mcg, choline 30mg, inositol 20mg, vit C 150mg.",
     half:"—", duration:"Daily" },
+  { name:"Quercetin", kind:"supplement", tag:"Antioxidant / flavonoid", col:"#F2B33D",
+    desc:"A plant flavonoid with antioxidant and anti-inflammatory properties.",
+    does:"Immune support, allergy/histamine response, and anti-inflammatory effects; studied as a senolytic (often paired with fisetin).",
+    dose:"500–1,000 mg/day, often taken with bromelain or vitamin C to aid absorption.",
+    half:"~11–28 hrs", duration:"Daily" },
 ];
 
 /* ---------- your protocol (from STACK_CONTEXT) ---------- */
@@ -687,10 +692,11 @@ function load(){
   try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
   if(!d || !d.items) d = { items: [], logs: {}, journal: {} };
   // seed the reference library on first run; afterwards it's user-editable
-  // new accounts start empty; the founder gets the full reference library seeded
+  // new accounts start empty; the founder always gets the full reference library (incl. new additions)
   if(!Array.isArray(d.library)) d.library = [];
-  if(d.library.length===0 && d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase())){
-    d.library = LIBRARY.map(p=>({id:uid(), ...p}));
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase())){
+    const have=new Set(d.library.map(p=>(p.name||"").toLowerCase()));
+    LIBRARY.forEach(p=>{ if(!have.has(p.name.toLowerCase())) d.library.push({id:uid(), ...p}); });
   }
   d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
   // integrity: guarantee unique, non-empty item ids
@@ -1667,6 +1673,8 @@ const PEPTIDE_CATALOG = [
   {n:"Argireline (Acetyl Hexapeptide-8)",t:"Skin & hair",d:"Topical peptide with botox-like effect.",u:"Expression lines (topical)",ds:"Topical"},
   {n:"Matrixyl (Palmitoyl Pentapeptide)",t:"Skin & hair",d:"Collagen-stimulating topical peptide.",u:"Collagen, firmness (topical)",ds:"Topical"},
   {n:"Melitane",t:"Skin & hair",d:"α-MSH analog for topical tanning.",u:"Tanning (topical)",ds:"Topical"},
+  // Uncategorized — pending verified details
+  {n:"FLGR242",t:"Uncategorized",d:"Research peptide — details pending verification.",u:"",ds:"Protocol varies"},
 ];
 /* ---------- monetization (dormant until PAYWALL_ENABLED = true) ---------- */
 const PAYWALL_ENABLED = false;   // master switch — flip to true to enforce the free limit
