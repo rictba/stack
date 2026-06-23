@@ -1677,7 +1677,18 @@ function isFounder(){ return !!(state && state.profile && FOUNDER_EMAILS.include
 function isPro(){ return !!(state && (state.pro || isFounder())); }
 function libCount(){ return (state.library||[]).length; }
 function canAddLibrary(){ return !PAYWALL_ENABLED || isPro() || libCount() < FREE_LIMIT; }
-function validateLicense(key){ return false; /* TODO: wire to Lemon Squeezy license-key validation */ }
+// Lemon Squeezy license validation (works client-side; no API key needed for the license endpoints)
+async function validateLicense(key){
+  try{
+    const r = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
+      method:"POST",
+      headers:{ "Accept":"application/json", "Content-Type":"application/json" },
+      body: JSON.stringify({ license_key: key })
+    });
+    const d = await r.json();
+    return !!(d && d.valid);
+  }catch(e){ return false; }
+}
 function showUpgrade(){
   const feats=["Track unlimited compounds","Full peptide catalog (87+)","Labs — log bloodwork & trends","Weight & waist trend charts","Data export & import"];
   $("#sheet").innerHTML = `
@@ -1691,12 +1702,16 @@ function showUpgrade(){
     </div>
     <button class="btn" id="upBuy">Unlock — ${PRICE_LABEL}</button>
     <button class="btn ghost" id="upCode">I have an unlock code</button>
-    <button class="btn ghost" id="upClose">Maybe later</button>`;
+    <button class="btn ghost" id="upClose">Maybe later</button>
+    <p class="hint" style="text-align:center;margin-top:10px">After purchase, Lemon Squeezy emails your code — paste it above.</p>`;
   $("#upBuy").onclick=()=>{ if(CHECKOUT_URL) window.open(CHECKOUT_URL,"_blank"); else alert("Checkout goes live soon."); };
-  $("#upCode").onclick=()=>{
+  $("#upCode").onclick=async ()=>{
     const key=prompt("Enter your unlock code"); if(!key||!key.trim()) return;
-    if(validateLicense(key.trim())){ state.pro=true; state.license=key.trim(); save(); closeSheet(); render(); alert("Unlocked — thank you! Stack is now Pro."); }
-    else alert("That code wasn't recognized. Code unlock activates once checkout is live.");
+    const btn=$("#upCode"); btn.textContent="Checking…"; btn.disabled=true;
+    const ok=await validateLicense(key.trim());
+    btn.textContent="I have an unlock code"; btn.disabled=false;
+    if(ok){ state.pro=true; state.license=key.trim(); save(); closeSheet(); render(); alert("Unlocked — thank you! Stack is now Pro."); }
+    else alert("That code wasn't recognized or isn't active. Check the code from your Lemon Squeezy email.");
   };
   $("#upClose").onclick=closeSheet;
   $("#scrim").classList.add("open");
