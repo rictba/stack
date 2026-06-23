@@ -312,6 +312,7 @@
 <main>
   <!-- TODAY -->
   <section class="tab active" id="tab-today">
+    <div id="titrate"></div>
     <div class="group-label">How are you feeling?</div>
     <div class="card" style="padding:6px 14px">
       <div class="rate-row"><span class="rate-label">Sleep</span>
@@ -724,13 +725,83 @@ function scheduledToday(item, date){
   if(s.type === "weekly") return (s.days||[]).includes(date.getDay());
   if(s.type === "cycle"){
     const start = s.startDate ? new Date(s.startDate+"T00:00:00") : new Date(date);
-    const on = +s.daysOn||1, off = +s.daysOff||0, period = on+off;
+    const mult = s.unit==="weeks" ? 7 : 1;
+    const on = (+s.daysOn||1)*mult, off = (+s.daysOff||0)*mult, period = on+off;
     if(period<=0) return true;
     const diff = Math.floor((date - start)/86400000);
     if(diff < 0) return false;
     return (diff % period) < on;
   }
   return true;
+}
+/* ---------- titration (dose plan) ---------- */
+function suggestedPhase(dp){
+  const phases = dp.phases||[];
+  if(!phases.length) return 0;
+  const start = new Date((dp.startDate||todayKey(new Date()))+"T00:00:00");
+  const weeks = Math.floor((Date.now() - start)/(7*86400000));
+  let cum=0;
+  for(let i=0;i<phases.length;i++){ cum += (+phases[i].weeks||0); if(weeks < cum) return i; }
+  return phases.length-1;
+}
+function phaseStartKey(dp, idx){
+  const start = new Date((dp.startDate||todayKey(new Date()))+"T00:00:00");
+  let cum=0; for(let i=0;i<idx;i++) cum += (+((dp.phases||[])[i]||{}).weeks||0);
+  const d=new Date(start); d.setDate(d.getDate()+cum*7); return todayKey(d);
+}
+function dosePlanDueStep(item){
+  const dp=item.dosePlan;
+  if(!dp || !dp.enabled || !(dp.phases||[]).length) return null;
+  const cur = dp.phaseIndex||0;
+  if(cur >= dp.phases.length-1) return null;            // already at last phase
+  if(suggestedPhase(dp) <= cur) return null;            // not time yet
+  if(dp.snoozeUntil && todayKey(viewDate) < dp.snoozeUntil) return null;
+  return { from:cur, to:cur+1 };
+}
+function effectivePhase(item){
+  const dp=item.dosePlan;
+  if(!dp || !dp.enabled || !(dp.phases||[]).length) return null;
+  const idx=Math.min(dp.phaseIndex||0, dp.phases.length-1);
+  return { idx, amt:dp.phases[idx].amt, unit:item.doseUnit||"mg" };
+}
+function doseLineFor(item){
+  const ph=effectivePhase(item);
+  if(ph){
+    let s=`${ph.amt} ${ph.unit}`;
+    const calc=drawCalc(ph.amt, ph.unit, item.vialMg, item.bacMl);
+    if(item.route!=="Nasal" && calc && (ph.unit==="mg"||ph.unit==="mcg"||ph.unit==="units")) s+=` · draw ${calc.units.toFixed(1)} u`;
+    s+=` · Phase ${ph.idx+1}/${item.dosePlan.phases.length}`;
+    return s;
+  }
+  return item.dose||'';
+}
+function titrateAction(id, kind){
+  const it=state.items.find(x=>x.id===id); if(!it||!it.dosePlan) return;
+  const dp=it.dosePlan, cur=dp.phaseIndex||0;
+  const tmr=new Date(viewDate); tmr.setDate(tmr.getDate()+1); const tkey=todayKey(tmr);
+  if(kind==="up"){ dp.phaseIndex=Math.min(cur+1, dp.phases.length-1); dp.snoozeUntil=tkey; }
+  else if(kind==="later"){ dp.snoozeUntil=tkey; }
+  else if(kind==="skip"){ dp.snoozeUntil=phaseStartKey(dp, cur+2); }
+  save(); render();
+}
+function renderTitrate(){
+  const wrap=$("#titrate"); if(!wrap) return;
+  const due=(state.items||[]).map(it=>({it, step:dosePlanDueStep(it)})).filter(x=>x.step);
+  if(!due.length){ wrap.innerHTML=""; return; }
+  wrap.innerHTML = due.map(({it,step})=>{
+    const unit=it.doseUnit||"mg", next=it.dosePlan.phases[step.to];
+    return `<div class="card" style="padding:14px;margin-bottom:10px;border:1px solid var(--accent)">
+      <div class="item-name" style="font-size:15px">⬆️ Step up ${esc(it.name)}?</div>
+      <div class="item-sub" style="margin-top:2px">Finished Phase ${step.from+1}. Ready to increase to <b>${next.amt} ${esc(unit)}</b> (Phase ${step.to+1})?</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="mini-btn" data-tup="${it.id}" style="border:1px solid var(--accent);border-radius:999px;padding:6px 12px">Step up to ${next.amt} ${esc(unit)}</button>
+        <button class="mini-btn" data-tlater="${it.id}">Not yet</button>
+        <button class="mini-btn" data-tskip="${it.id}" style="color:var(--muted)">Skip this step</button>
+      </div></div>`;
+  }).join("");
+  wrap.querySelectorAll("[data-tup]").forEach(b=>b.onclick=()=>titrateAction(b.dataset.tup,"up"));
+  wrap.querySelectorAll("[data-tlater]").forEach(b=>b.onclick=()=>titrateAction(b.dataset.tlater,"later"));
+  wrap.querySelectorAll("[data-tskip]").forEach(b=>b.onclick=()=>titrateAction(b.dataset.tskip,"skip"));
 }
 function slotsFor(item){ const s=item.slots&&item.slots.length?item.slots:["AM"];
   return SLOT_ORDER.filter(x=>s.includes(x)); }
@@ -791,6 +862,7 @@ function renderToday(){
   const weeklyDone = loggedThisWeek("weight") || loggedThisWeek("waist");
   $("#weeklyWrap").style.display = weeklyDone ? "none" : "";
   $("#weeklyStatus").textContent = "Log your weight & waist once a week.";
+  renderTitrate();
   renderGoalCard();
   renderTrends();
 
@@ -829,7 +901,7 @@ function renderToday(){
         <div class="item-body">
           <div class="item-name" data-toggle="${it.id}" data-slot="${sl}">${esc(it.name)}
             <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
-          <div class="item-sub">${esc(it.dose||'')}${ts?' · <span class="ts">'+fmtTime(ts)+'</span>':''}${low?' · <span class="low-flag">⚠ low</span>':''}</div>
+          <div class="item-sub">${esc(doseLineFor(it))}${ts?' · <span class="ts">'+fmtTime(ts)+'</span>':''}${low?' · <span class="low-flag">⚠ low</span>':''}</div>
           ${siteSel}
         </div>
       </div>`;
@@ -861,7 +933,7 @@ function renderProtocol(){
       <div class="item-body" data-edit="${it.id}">
         <div class="item-name">${esc(it.name)}
           <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
-        <div class="item-sub">${esc(it.dose||'—')} · ${slotsFor(it).join(' / ')} · ${sch}</div>
+        <div class="item-sub">${esc(doseLineFor(it)||'—')} · ${slotsFor(it).join(' / ')} · ${sch}</div>
         ${it.mfr?`<div class="item-sub" style="color:#9a9da8">🏷 ${esc(it.mfr)}</div>`:''}
       </div>
       <button class="mini-btn" data-edit="${it.id}">Edit</button>
@@ -1389,6 +1461,14 @@ function openEditor(id, prefill){
       <div class="hint" id="fDoseManual" style="margin-top:8px"></div>
     </div>
 
+    <div class="field" id="fPlanWrap"><label>Dose plan</label>
+      <div class="seg" id="fDoseMode" style="width:220px">
+        <button data-v="fixed" class="${(it.dosePlan&&it.dosePlan.enabled)?'':'sel'}">Fixed</button>
+        <button data-v="titration" class="${(it.dosePlan&&it.dosePlan.enabled)?'sel':''}">Titration</button>
+      </div>
+      <div id="fPlan"></div>
+    </div>
+
     <div class="field"><label>Manufacturer / source <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
       <input id="fMfr" placeholder="e.g. Thorne, Core Peptides" value="${esc(it.mfr||'')}"></div>
     <div class="field"><label>Goals this targets <span style="font-weight:400;color:var(--muted)">(blank = auto-match)</span></label>
@@ -1429,22 +1509,35 @@ function openEditor(id, prefill){
   `;
 
   // local working copy of schedule + track state
-  let work = { type:sch.type, daysOn:sch.daysOn||5, daysOff:sch.daysOff||2,
+  let work = { type:sch.type, daysOn:sch.daysOn||5, daysOff:sch.daysOff||2, cycleUnit:sch.unit||"days",
     startDate:sch.startDate||todayKey(new Date()), days:(sch.days||[1,2,3,4,5]).slice(),
-    track: !!it.trackInv, inject: isInject(it) };
+    track: !!it.trackInv, inject: isInject(it),
+    plan: {
+      on: !!(it.dosePlan && it.dosePlan.enabled),
+      startDate: (it.dosePlan && it.dosePlan.startDate) || todayKey(new Date()),
+      phases: ((it.dosePlan && it.dosePlan.phases) || []).map(p=>({weeks:p.weeks, amt:p.amt})),
+      phaseIndex: (it.dosePlan && it.dosePlan.phaseIndex) || 0,
+      snoozeUntil: it.dosePlan && it.dosePlan.snoozeUntil
+    } };
 
   function renderSched(){
     const o=$("#schOpts");
     if(work.type==="cycle"){
-      o.innerHTML=`<div class="row2">
-        <div class="field"><label>Days on</label><input id="cOn" type="number" inputmode="numeric" value="${work.daysOn}"></div>
-        <div class="field"><label>Days off</label><input id="cOff" type="number" inputmode="numeric" value="${work.daysOff}"></div>
+      const uw=work.cycleUnit==="weeks";
+      o.innerHTML=`<div class="seg" id="cUnit" style="margin-bottom:10px;width:160px">
+          <button data-v="days" class="${!uw?'sel':''}">Days</button>
+          <button data-v="weeks" class="${uw?'sel':''}">Weeks</button>
+        </div>
+        <div class="row2">
+        <div class="field"><label>${uw?'Weeks':'Days'} on</label><input id="cOn" type="number" inputmode="numeric" value="${work.daysOn}"></div>
+        <div class="field"><label>${uw?'Weeks':'Days'} off</label><input id="cOff" type="number" inputmode="numeric" value="${work.daysOff}"></div>
       </div>
       <div class="field"><label>Cycle started</label><input id="cStart" type="date" value="${work.startDate}"></div>
-      <div class="hint">e.g. 5 on / 2 off repeats from the start date.</div>`;
+      <div class="hint">e.g. ${uw?'8 weeks on / 4 weeks off':'5 days on / 2 days off'}, repeating from the start date.</div>`;
       $("#cOn").oninput=e=>work.daysOn=e.target.value;
       $("#cOff").oninput=e=>work.daysOff=e.target.value;
       $("#cStart").oninput=e=>work.startDate=e.target.value;
+      seg("#cUnit", v=>{ work.cycleUnit=v; renderSched(); });
     } else if(work.type==="weekly"){
       const dn=["S","M","T","W","T","F","S"];
       o.innerHTML=`<div class="field"><label>Days of week</label>
@@ -1505,8 +1598,31 @@ function openEditor(id, prefill){
     else { const cur=$("#fDose").value; $("#fDoseManual").textContent = cur ? ("Current: "+cur+" — enter an amount above to replace.") : ""; }
   }
 
-  renderSched(); renderInv(); renderDose();
+  function renderPlan(){
+    const c=$("#fPlan"); if(!c) return;
+    if(!work.plan.on){ c.innerHTML=""; return; }
+    if(!work.plan.phases.length) work.plan.phases.push({weeks:4, amt:""});
+    const unit = ($("#fUnit") && $("#fUnit").value) || it.doseUnit || "mg";
+    c.innerHTML = `
+      <div class="field" style="margin-top:10px"><label>Plan start</label><input id="fpStart" type="date" value="${work.plan.startDate}"></div>
+      <div id="fpRows">${work.plan.phases.map((p,i)=>`
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px">
+          <div class="field" style="margin:0;flex:1"><label>Phase ${i+1} · weeks</label><input class="fpw" data-i="${i}" type="number" inputmode="numeric" value="${p.weeks??''}"></div>
+          <div class="field" style="margin:0;flex:1"><label>Dose (${esc(unit)})</label><input class="fpa" data-i="${i}" type="number" inputmode="decimal" step="any" value="${p.amt??''}"></div>
+          <button class="mini-btn" data-prem="${i}" style="color:var(--red);padding-bottom:12px">✕</button>
+        </div>`).join("")}</div>
+      <button class="btn ghost" id="fpAdd" style="margin-top:2px">＋ Add phase</button>
+      <div class="hint">Last phase runs ongoing. Stack asks before each increase — never bumps automatically.</div>`;
+    $("#fpStart").oninput=e=>work.plan.startDate=e.target.value;
+    c.querySelectorAll(".fpw").forEach(el=>el.oninput=()=>{ work.plan.phases[+el.dataset.i].weeks=el.value; });
+    c.querySelectorAll(".fpa").forEach(el=>el.oninput=()=>{ work.plan.phases[+el.dataset.i].amt=el.value; });
+    c.querySelectorAll("[data-prem]").forEach(el=>el.onclick=()=>{ work.plan.phases.splice(+el.dataset.prem,1); renderPlan(); });
+    $("#fpAdd").onclick=()=>{ work.plan.phases.push({weeks:4, amt:""}); renderPlan(); };
+  }
 
+  renderSched(); renderInv(); renderDose(); renderPlan();
+
+  seg("#fDoseMode", v=>{ work.plan.on = v==="titration"; renderPlan(); });
   seg("#fType", v=>{ renderDose(); });
   seg("#fRoute", v=>{
     if(v==="Nasal"){
@@ -1518,7 +1634,7 @@ function openEditor(id, prefill){
   seg("#fSchedType", v=>{ work.type=v; renderSched(); });
   seg("#fInject", v=>{ work.inject = v==="1"; });
   ["fAmt","fVial","fBac"].forEach(idn=>$("#"+idn).oninput=renderDose);
-  $("#fUnit").onchange=renderDose;
+  $("#fUnit").onchange=()=>{ renderDose(); renderPlan(); };
   $("#fName").addEventListener("input", renderDose);
   $("#fTrack").querySelectorAll("button").forEach(b=>b.onclick=()=>{
     $("#fTrack").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
@@ -1533,16 +1649,22 @@ function openEditor(id, prefill){
     const type=$("#fType").querySelector(".sel").dataset.v;
     const slots=[...$("#fSlots").querySelectorAll(".sel")].map(b=>b.dataset.v);
     const schedule={type:work.type};
-    if(work.type==="cycle"){schedule.daysOn=+work.daysOn||1;schedule.daysOff=+work.daysOff||0;schedule.startDate=work.startDate;}
+    if(work.type==="cycle"){schedule.daysOn=+work.daysOn||1;schedule.daysOff=+work.daysOff||0;schedule.startDate=work.startDate;schedule.unit=work.cycleUnit;}
     if(work.type==="weekly")schedule.days=work.days.slice().sort();
     const rec = id ? state.items.find(i=>i.id===id) : {id:uid(),color:it.color};
     const d=curDose(), calc=drawCalc(d.amt,d.unit,d.vial,d.bac);
     rec.name=name; rec.type=type; rec.mfr=$("#fMfr").value.trim();
     rec.route = ($("#fRoute").querySelector(".sel")||{}).dataset?.v || "SubQ";
-    if(d.amt){ rec.doseAmt=d.amt; rec.doseUnit=d.unit;
-      rec.vialMg=isNaN(d.vial)?undefined:d.vial; rec.bacMl=isNaN(d.bac)?undefined:d.bac;
-      rec.dose=doseString(d,calc); }
+    if(d.amt){ rec.doseAmt=d.amt; rec.dose=doseString(d,calc); }
     else { rec.dose=$("#fDose").value.trim(); rec.doseAmt=undefined; }
+    rec.doseUnit=d.unit;
+    rec.vialMg=isNaN(d.vial)?undefined:d.vial; rec.bacMl=isNaN(d.bac)?undefined:d.bac;
+    // dose plan (titration)
+    if(work.plan.on){
+      const phases=work.plan.phases.map(p=>({weeks:+p.weeks||0, amt:parseFloat(p.amt)})).filter(p=>!isNaN(p.amt));
+      rec.dosePlan={ enabled:phases.length>0, startDate:work.plan.startDate, phases,
+        phaseIndex:Math.min(work.plan.phaseIndex||0, Math.max(0,phases.length-1)), snoozeUntil:work.plan.snoozeUntil };
+    } else if(rec.dosePlan){ rec.dosePlan.enabled=false; }
     rec.slots=slots.length?slots:["AM"]; rec.schedule=schedule; rec.trackInv=work.track; rec.inject=work.inject;
     rec.targets=[...$("#fTargets").querySelectorAll(".sel")].map(b=>b.dataset.tgt);
     if(work.track){ rec.dosesLeft=parseInt($("#iLeft").value,10)||0; rec.lowAt=parseInt($("#iLow").value,10)||0;
@@ -1565,7 +1687,7 @@ $("#scrim").onclick=e=>{ if(e.target.id==="scrim") closeSheet(); };
 /* ---------- helpers ---------- */
 function scheduleLabel(s){ s=s||{type:"daily"};
   if(s.type==="daily")return "Daily";
-  if(s.type==="cycle")return `${s.daysOn||0} on / ${s.daysOff||0} off`;
+  if(s.type==="cycle"){const u=s.unit==="weeks"?"wk":"d";return `${s.daysOn||0}${u} on / ${s.daysOff||0}${u} off`;}
   if(s.type==="weekly"){const dn=["Su","Mo","Tu","We","Th","Fr","Sa"];
     return (s.days||[]).map(d=>dn[d]).join(", ")||"Weekly";}
   return "Daily"; }
