@@ -111,6 +111,13 @@
   .aim-nudge{font-size:11px;font-weight:600;background:var(--surface2);border:1px dashed var(--accent);color:var(--accent);border-radius:999px;padding:3px 9px}
   .aim-none{font-size:11px;color:var(--muted)}
   .tier-badge{font-size:10px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+  .cel{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:24px}
+  .cel.open{display:flex}
+  .cel-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px 24px;max-width:360px;width:100%;text-align:center;animation:celpop .3s cubic-bezier(.2,.9,.3,1.2)}
+  .cel-icon{font-size:54px;line-height:1;margin-bottom:8px}
+  .cel-card h2{margin:6px 0 8px;font-size:24px}
+  .cel-card p{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 20px}
+  @keyframes celpop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
   .lab-grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 2px 8px}
   .lab-row{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
   .lab-row .nm{flex:1;font-size:15px}
@@ -1822,6 +1829,23 @@ async function activateLicense(key){
     return { ok:false, error:(d && (d.error||d.message)) || "That code wasn't recognized or has reached its device limit." };
   }catch(e){ return { ok:false, error:"Network error — check your connection and try again." }; }
 }
+function showCelebrate(opts){
+  let el=document.getElementById("celebrate");
+  if(!el){ el=document.createElement("div"); el.id="celebrate"; el.className="cel"; document.body.appendChild(el); }
+  el.innerHTML=`<div class="cel-card">
+    <div class="cel-icon">${opts.icon||"🎉"}</div>
+    <h2>${esc(opts.title||"")}</h2>
+    <p>${opts.body||""}</p>
+    <button class="btn" id="celClose">${esc(opts.btn||"Done")}</button>
+  </div>`;
+  el.classList.add("open");
+  document.getElementById("celClose").onclick=()=>el.classList.remove("open");
+}
+function showUnlocked(){
+  showCelebrate({ icon:"🎉", title:"You're Pro!",
+    body:"Thanks for unlocking Stack. Everything's open now — unlimited compounds, the full catalog, Labs, and trends. Your data stays private on your device.",
+    btn:"Let's go" });
+}
 function showUpgrade(){
   const feats=["Track unlimited compounds","Full peptide catalog (87+)","Labs — log bloodwork & trends","Weight & waist trend charts","Data export & import"];
   $("#sheet").innerHTML = `
@@ -1848,7 +1872,7 @@ function showUpgrade(){
     const btn=$("#upCode"); btn.textContent="Activating…"; btn.disabled=true;
     const res=await activateLicense(key.trim());
     btn.textContent="I have an unlock code"; btn.disabled=false;
-    if(res.ok){ state.pro=true; state.license=key.trim(); state.licenseInstance=res.instance; save(); closeSheet(); render(); alert("Unlocked — thank you! Stack is now Pro."); }
+    if(res.ok){ state.pro=true; state.license=key.trim(); state.licenseInstance=res.instance; save(); closeSheet(); render(); showUnlocked(); }
     else alert(res.error);
   };
   $("#upClose").onclick=closeSheet;
@@ -2498,7 +2522,9 @@ window.addEventListener("load", ()=>{
       window.createLemonSqueezy();
       window.LemonSqueezy.Setup({ eventHandler:(ev)=>{
         if(ev && ev.event==="Checkout.Success"){
-          alert("Purchase complete! Check your email for your unlock code, then tap “I have an unlock code” to activate.");
+          showCelebrate({ icon:"✅", title:"Purchase complete!",
+            body:"Check your email for your unlock code, then tap “I have an unlock code” in Settings → Membership to activate.",
+            btn:"Got it" });
         }
       }});
     }
