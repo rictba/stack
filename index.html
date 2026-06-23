@@ -1808,16 +1808,18 @@ function isPro(){ return !!(state && (state.pro || isFounder())); }
 function libCount(){ return (state.library||[]).length; }
 function canAddLibrary(){ return !PAYWALL_ENABLED || isPro() || libCount() < FREE_LIMIT; }
 // Lemon Squeezy license validation (works client-side; no API key needed for the license endpoints)
-async function validateLicense(key){
+// Lemon Squeezy — activate binds the key to this device and enforces the activation limit
+async function activateLicense(key){
   try{
-    const r = await fetch("https://api.lemonsqueezy.com/v1/licenses/validate", {
+    const r = await fetch("https://api.lemonsqueezy.com/v1/licenses/activate", {
       method:"POST",
       headers:{ "Accept":"application/json", "Content-Type":"application/json" },
-      body: JSON.stringify({ license_key: key })
+      body: JSON.stringify({ license_key: key, instance_name: "Stack — "+((navigator.platform||"device")) })
     });
     const d = await r.json();
-    return !!(d && d.valid);
-  }catch(e){ return false; }
+    if(d && d.activated && d.instance) return { ok:true, instance:d.instance.id };
+    return { ok:false, error:(d && (d.error||d.message)) || "That code wasn't recognized or has reached its device limit." };
+  }catch(e){ return { ok:false, error:"Network error — check your connection and try again." }; }
 }
 function showUpgrade(){
   const feats=["Track unlimited compounds","Full peptide catalog (87+)","Labs — log bloodwork & trends","Weight & waist trend charts","Data export & import"];
@@ -1837,11 +1839,11 @@ function showUpgrade(){
   $("#upBuy").onclick=()=>{ if(CHECKOUT_URL) window.open(CHECKOUT_URL,"_blank"); else alert("Checkout goes live soon."); };
   $("#upCode").onclick=async ()=>{
     const key=prompt("Enter your unlock code"); if(!key||!key.trim()) return;
-    const btn=$("#upCode"); btn.textContent="Checking…"; btn.disabled=true;
-    const ok=await validateLicense(key.trim());
+    const btn=$("#upCode"); btn.textContent="Activating…"; btn.disabled=true;
+    const res=await activateLicense(key.trim());
     btn.textContent="I have an unlock code"; btn.disabled=false;
-    if(ok){ state.pro=true; state.license=key.trim(); save(); closeSheet(); render(); alert("Unlocked — thank you! Stack is now Pro."); }
-    else alert("That code wasn't recognized or isn't active. Check the code from your Lemon Squeezy email.");
+    if(res.ok){ state.pro=true; state.license=key.trim(); state.licenseInstance=res.instance; save(); closeSheet(); render(); alert("Unlocked — thank you! Stack is now Pro."); }
+    else alert(res.error);
   };
   $("#upClose").onclick=closeSheet;
   $("#scrim").classList.add("open");
