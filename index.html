@@ -516,6 +516,7 @@ const $ = s => document.querySelector(s);
 const todayKey = d => { const x=new Date(d); x.setHours(0,0,0,0);
   return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const FOUNDER_EMAILS = ["ric@5280motorcompany.com"];  // fully-unlocked founder account(s), matched by profile email
 
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
@@ -685,12 +686,10 @@ function load(){
   try{ d = JSON.parse(localStorage.getItem(KEY)); }catch(e){}
   if(!d || !d.items) d = { items: [], logs: {}, journal: {} };
   // seed the reference library on first run; afterwards it's user-editable
-  if(!Array.isArray(d.library)) d.library = LIBRARY.map(p=>({id:uid(), ...p}));
-  // backfill any newly-added default library entries (once per seed version)
-  if(d.libSeedV !== LIB_SEED_V){
-    const have = new Set(d.library.map(p=>(p.name||"").toLowerCase()));
-    LIBRARY.forEach(p=>{ if(!have.has(p.name.toLowerCase())) d.library.push({id:uid(), ...p}); });
-    d.libSeedV = LIB_SEED_V;
+  // new accounts start empty; the founder gets the full reference library seeded
+  if(!Array.isArray(d.library)) d.library = [];
+  if(d.library.length===0 && d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase())){
+    d.library = LIBRARY.map(p=>({id:uid(), ...p}));
   }
   d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
   // integrity: guarantee unique, non-empty item ids
@@ -1671,7 +1670,8 @@ const PEPTIDE_CATALOG = [
 /* ---------- monetization (dormant until PAYWALL_ENABLED = true) ---------- */
 const PAYWALL_ENABLED = false;   // master switch — flip to true to enforce the free limit
 const FREE_LIMIT = 3;            // max Library references on the free tier
-function isPro(){ return !!(state && state.pro); }
+function isFounder(){ return !!(state && state.profile && FOUNDER_EMAILS.includes((state.profile.email||"").trim().toLowerCase())); }
+function isPro(){ return !!(state && (state.pro || isFounder())); }
 function libCount(){ return (state.library||[]).length; }
 function canAddLibrary(){ return !PAYWALL_ENABLED || isPro() || libCount() < FREE_LIMIT; }
 function showUpgrade(){
@@ -1982,6 +1982,8 @@ function openProfileEditor(){
     p.goal=$("#pfGoal").value||undefined;
     p.achieve=[...$("#pfAims").querySelectorAll(".sel")].map(b=>b.dataset.aim);
     const gw=parseFloat($("#pfGoalW").value); p.goalWeight=isNaN(gw)?undefined:gw;
+    // founder unlock: seed the full reference library if theirs is empty
+    if(isFounder() && (state.library||[]).length===0) state.library = LIBRARY.map(x=>({id:uid(), ...x}));
     save(); closeSheet(); render();
   };
   $("#pfCancel").onclick=closeSheet;
