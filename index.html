@@ -832,7 +832,38 @@ function toggleDose(item, slot){
     state.logs[dk][k] = { t: Date.now(), site: "" };
     if(item.trackInv) item.dosesLeft = Math.max((item.dosesLeft||0)-1, 0);
   }
-  save(); render();
+  save(); render(); checkStreak();
+}
+/* ---------- adherence streak celebration ---------- */
+const STREAK_MILESTONES=[3,7,14,30,60,100,180,365];
+function dayComplete(date){
+  const items=(state.items||[]).filter(i=>scheduledToday(i,date));
+  if(!items.length) return null;            // nothing scheduled → neutral day
+  let total=0, done=0;
+  items.forEach(it=>slotsFor(it).forEach(sl=>{ total++; if(isLogged(it,sl,date)) done++; }));
+  return total>0 && done===total;
+}
+function currentStreak(){
+  let streak=0;
+  for(let i=0;i<400;i++){
+    const day=new Date(viewDate); day.setDate(day.getDate()-i);
+    const c=dayComplete(day);
+    if(c===null) continue;                   // skip off/neutral days without breaking
+    if(c) streak++; else break;
+  }
+  return streak;
+}
+function checkStreak(){
+  const streak=currentStreak();
+  let last=state.streakCelebrated||0;
+  if(streak<last) last=0;                     // streak broke → re-arm milestones
+  const hit=STREAK_MILESTONES.filter(m=>m<=streak && m>last).pop();
+  if(hit){ last=hit;
+    showCelebrate({ icon:"🔥", title:`${hit}-day streak!`,
+      body:`${hit} days staying on protocol. Momentum looks good on you — keep it rolling.`,
+      btn:"🔥 Keep going" });
+  }
+  state.streakCelebrated=last; save();
 }
 function setSite(item, slot, site){
   const dk = todayKey(viewDate); const k = logKey(item, slot);
