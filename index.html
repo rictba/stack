@@ -1802,7 +1802,7 @@ const PEPTIDE_CATALOG = [
 const PAYWALL_ENABLED = false;   // master switch — flip to true to enforce the free limit
 const FREE_LIMIT = 3;            // max Library references on the free tier
 const PRICE_LABEL = "$39.99";    // one-time unlock price shown in the paywall
-const CHECKOUT_URL = "";         // paste the Lemon Squeezy / Stripe checkout link here when live
+const CHECKOUT_URL = "https://stak.lemonsqueezy.com/checkout/buy/688e6908-65a5-4bf4-b767-28f7bb66af35";
 function isFounder(){ return !!(state && state.profile && FOUNDER_EMAILS.includes((state.profile.email||"").trim().toLowerCase())); }
 function isPro(){ return !!(state && (state.pro || isFounder())); }
 function libCount(){ return (state.library||[]).length; }
