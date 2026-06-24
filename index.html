@@ -897,6 +897,34 @@ function setSite(item, slot, site){
   else state.logs[dk][k] = { t: e, site };
   save();
 }
+/* ---------- injection-site rotation ---------- */
+const INJECT_SITES = SITES.filter(s=>!["Nasal","Oral","Other"].includes(s));
+function daysAgoKey(dayKey){ const d=new Date(dayKey+"T00:00:00"); return Math.round((viewDate - d)/86400000); }
+function siteHistory(item){
+  const out=[];
+  Object.keys(state.logs).forEach(day=>{
+    const dl=state.logs[day];
+    Object.keys(dl).forEach(key=>{ if(key.split("__")[0]!==item.id) return;
+      const e=dl[key], site=(e&&typeof e==="object")?e.site:""; if(site) out.push({date:day, site}); });
+  });
+  out.sort((a,b)=>a.date<b.date?1:-1);   // most recent first
+  return out;
+}
+function lastSite(item){
+  const tk=todayKey(viewDate);
+  const prior=siteHistory(item).filter(x=>x.date<tk);
+  return prior.length ? {site:prior[0].site, days:daysAgoKey(prior[0].date)} : null;
+}
+function siteRecency(item){
+  const m={};
+  siteHistory(item).forEach(x=>{ const d=daysAgoKey(x.date); if(m[x.site]==null||d<m[x.site]) m[x.site]=d; });
+  return m;
+}
+function suggestSite(item){
+  const rec=siteRecency(item); let best=INJECT_SITES[0], score=-1;
+  INJECT_SITES.forEach(s=>{ const v=rec[s]==null?99999:rec[s]; if(v>score){score=v; best=s;} });
+  return best;
+}
 
 /* ---------- rendering ---------- */
 function fmtTime(ts){ const d=new Date(ts);
@@ -955,10 +983,25 @@ function renderToday(){
       const e = entryOf(it,sl,viewDate);
       const logged = !!e, ts = tsOf(e), site = siteOf(e);
       const low = it.trackInv && (it.dosesLeft||0) <= (it.lowAt||0);
-      const siteSel = (logged && isInject(it) && state.settings.trackSites!==false) ? `<select class="site-sel" data-sitekey="${it.id}__${sl}">
-          <option value="">📍 Injection site…</option>
-          ${SITES.map(s=>`<option ${site===s?'selected':''}>${s}</option>`).join("")}
-        </select>` : "";
+      const inj = isInject(it) && state.settings.trackSites!==false;
+      let siteBlock="";
+      if(inj){
+        const ls=lastSite(it), rec=siteRecency(it), sug=suggestSite(it);
+        const sameAsLast = site && ls && site===ls.site;
+        if(logged){
+          const opts = SITES.map(s=>`<option value="${esc(s)}" ${site===s?'selected':''}>${esc(s)}${rec[s]!=null?` · ${rec[s]===0?'today':rec[s]+'d ago'}`:''}</option>`).join("");
+          siteBlock = `<div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="site-sel" data-sitekey="${it.id}__${sl}">
+              <option value="">📍 Site…${sug?` (suggest ${esc(sug)})`:''}</option>${opts}
+            </select>
+            ${(!site&&sug)?`<button class="mini-btn" data-suggest="${it.id}__${sl}" data-site="${esc(sug)}">Use ${esc(sug)}</button>`:''}
+            ${sameAsLast?`<span class="item-sub low-flag">⚠ same site as last (${ls.days}d ago)</span>`
+              : (ls?`<span class="item-sub" style="color:var(--muted)">Last: ${esc(ls.site)} · ${ls.days}d ago</span>`:'')}
+          </div>`;
+        } else if(ls){
+          siteBlock = `<div class="item-sub" style="color:var(--muted);margin-top:4px">💉 Last: ${esc(ls.site)} · ${ls.days}d ago · try ${esc(sug)}</div>`;
+        }
+      }
       html += `<div class="item ${logged?'done':''}">
         <div class="check" data-toggle="${it.id}" data-slot="${sl}">✓</div>
         <div class="swatch" style="background:${it.color}"></div>
@@ -966,7 +1009,7 @@ function renderToday(){
           <div class="item-name" data-toggle="${it.id}" data-slot="${sl}">${esc(it.name)}
             <span class="pill ${it.type==='peptide'?'pep':'sup'}">${it.type==='peptide'?'PEP':'SUP'}</span></div>
           <div class="item-sub">${esc(doseLineFor(it))}${ts?' · <span class="ts">'+fmtTime(ts)+'</span>':''}${low?' · <span class="low-flag">⚠ low</span>':''}</div>
-          ${siteSel}
+          ${siteBlock}
         </div>
       </div>`;
     });
@@ -980,7 +1023,11 @@ function renderToday(){
   });
   list.querySelectorAll(".site-sel").forEach(sel=>sel.onchange=()=>{
     const [id,slot]=sel.dataset.sitekey.split("__");
-    setSite(state.items.find(i=>i.id===id), slot, sel.value);
+    setSite(state.items.find(i=>i.id===id), slot, sel.value); render();
+  });
+  list.querySelectorAll("[data-suggest]").forEach(el=>el.onclick=()=>{
+    const [id,slot]=el.dataset.suggest.split("__");
+    setSite(state.items.find(i=>i.id===id), slot, el.dataset.site); render();
   });
 }
 
