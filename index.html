@@ -527,6 +527,20 @@ const todayKey = d => { const x=new Date(d); x.setHours(0,0,0,0);
   return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0"); };
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const FOUNDER_EMAILS = ["ric@5280motorcompany.com"];  // fully-unlocked founder account(s), matched by profile email
+// Founder-only one-time lab preload (Life Extension / Quest panel, collected 6/11/2026)
+const FOUNDER_LAB_PRELOAD = { date:"2026-06-11", provider:"Life Extension / Quest", values:{
+  glucose:90, bun:20, creatinine:0.92, egfr:99, sodium:142, potassium:3.9, chloride:107, co2:25,
+  calcium:9.4, protein_total:6.5, albumin:4.6, globulin:1.9, ag_ratio:2.4, bilirubin:0.5, alp:50, ast:16, alt:24,
+  phosphate:3.4, uric:6.0, ldh:111, ggt:18, a1c:5.0, insulin:11.0,
+  wbc:7.0, rbc:5.32, hgb:16.1, hct:48.4, mcv:91.0, mch:30.3, mchc:33.3, rdw:12.3, platelets:251, mpv:9.9,
+  neut_abs:4368, lymph_abs:2079, mono_abs:434, eos_abs:77, baso_abs:42,
+  neut_pct:62.4, lymph_pct:29.7, mono_pct:6.2, eos_pct:1.1, baso_pct:0.6,
+  iron:66, tibc:372, tsat:18, ferritin:228, vitd:36,
+  chol:151, hdl:41, trig:132, ldl:87, chol_hdl_ratio:3.7, nonhdl:110, apob:81, hscrp:0.2, homocysteine:8.2,
+  magnesium:2.3, total_t:711, free_t:92.8, shbg:74, e2:22, estrogens_total:116, dheas:115,
+  psa:1.0, psa_free:0.3, psa_pct_free:30, dht:59, pregnenolone:88, fsh:5.7, lh:3.8, igf1:175,
+  cortisol_am:17.6, tsh:0.61, ft4:1.3, ft3:3.4, rt3:15, progesterone:0.1
+}};
 
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
@@ -718,6 +732,12 @@ function load(){
   d.settings = d.settings || {};
   d.labs = Array.isArray(d.labs) ? d.labs : [];
   d.labMarkers = Array.isArray(d.labMarkers) ? d.labMarkers : [];
+  // founder-only one-time lab preload (won't re-add if edited/deleted)
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.founderLabSeed){
+    d.labs.push({ id:uid(), date:FOUNDER_LAB_PRELOAD.date, provider:FOUNDER_LAB_PRELOAD.provider,
+      values:Object.assign({}, FOUNDER_LAB_PRELOAD.values) });
+    d.founderLabSeed = true;
+  }
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
   // heal: nasal items shouldn't carry the syringe "draw N u" suffix in their saved dose
@@ -1033,64 +1053,102 @@ function restock(id){
 /* ---------- labs ---------- */
 const LAB_GROUPS = ["Hormones","Metabolic","Lipids","Liver","Blood","Kidney","Electrolytes & Minerals","Vitamins & Iron","Inflammation & Cardio","Other","Custom"];
 const LAB_MARKERS = [
-  {k:"total_t",name:"Total Testosterone",unit:"ng/dL",grp:"Hormones",lo:300,hi:1000},
-  {k:"free_t",name:"Free Testosterone",unit:"pg/mL",grp:"Hormones",lo:9,hi:30},
+  // Hormones
+  {k:"total_t",name:"Total Testosterone",unit:"ng/dL",grp:"Hormones",lo:250,hi:1100},
+  {k:"free_t",name:"Free Testosterone",unit:"pg/mL",grp:"Hormones",lo:35.0,hi:155.0},
   {k:"bioavail_t",name:"Bioavailable Testosterone",unit:"ng/dL",grp:"Hormones",lo:130,hi:680},
-  {k:"dht",name:"DHT",unit:"ng/dL",grp:"Hormones",lo:30,hi:85},
-  {k:"e2",name:"Estradiol",unit:"pg/mL",grp:"Hormones",lo:10,hi:40},
-  {k:"shbg",name:"SHBG",unit:"nmol/L",grp:"Hormones",lo:10,hi:57},
+  {k:"dht",name:"DHT",unit:"ng/dL",grp:"Hormones",lo:12,hi:65},
+  {k:"e2",name:"Estradiol",unit:"pg/mL",grp:"Hormones",lo:0,hi:29},
+  {k:"estrogens_total",name:"Estrogens, Total",unit:"pg/mL",grp:"Hormones",lo:0,hi:404},
+  {k:"shbg",name:"SHBG",unit:"nmol/L",grp:"Hormones",lo:10,hi:50},
   {k:"prolactin",name:"Prolactin",unit:"ng/mL",grp:"Hormones",lo:4,hi:15},
-  {k:"igf1",name:"IGF-1",unit:"ng/mL",grp:"Hormones",lo:90,hi:300},
-  {k:"dheas",name:"DHEA-S",unit:"µg/dL",grp:"Hormones",lo:100,hi:500},
-  {k:"cortisol_am",name:"Cortisol (AM)",unit:"µg/dL",grp:"Hormones",lo:6,hi:20},
-  {k:"fsh",name:"FSH",unit:"mIU/mL",grp:"Hormones",lo:1.5,hi:12.4},
-  {k:"lh",name:"LH",unit:"mIU/mL",grp:"Hormones",lo:1.7,hi:8.6},
-  {k:"progesterone",name:"Progesterone",unit:"ng/mL",grp:"Hormones",lo:0.1,hi:0.5},
-  {k:"a1c",name:"A1C",unit:"%",grp:"Metabolic",lo:4.0,hi:5.6},
-  {k:"glucose",name:"Fasting Glucose",unit:"mg/dL",grp:"Metabolic",lo:70,hi:99},
-  {k:"insulin",name:"Fasting Insulin",unit:"µIU/mL",grp:"Metabolic",lo:2,hi:12},
+  {k:"igf1",name:"IGF-1",unit:"ng/mL",grp:"Hormones",lo:50,hi:317},
+  {k:"dheas",name:"DHEA-S",unit:"µg/dL",grp:"Hormones",lo:32,hi:279},
+  {k:"pregnenolone",name:"Pregnenolone",unit:"ng/dL",grp:"Hormones",lo:22,hi:237},
+  {k:"cortisol_am",name:"Cortisol (AM)",unit:"µg/dL",grp:"Hormones",lo:4.0,hi:22.0},
+  {k:"fsh",name:"FSH",unit:"mIU/mL",grp:"Hormones",lo:1.4,hi:12.8},
+  {k:"lh",name:"LH",unit:"mIU/mL",grp:"Hormones",lo:1.5,hi:9.3},
+  {k:"progesterone",name:"Progesterone",unit:"ng/mL",grp:"Hormones",lo:0,hi:0.2},
+  // Metabolic
+  {k:"a1c",name:"A1C",unit:"%",grp:"Metabolic",lo:0,hi:5.7},
+  {k:"glucose",name:"Fasting Glucose",unit:"mg/dL",grp:"Metabolic",lo:65,hi:99},
+  {k:"insulin",name:"Fasting Insulin",unit:"µIU/mL",grp:"Metabolic",lo:0,hi:18.4},
   {k:"homair",name:"HOMA-IR",unit:"",grp:"Metabolic",lo:0.5,hi:2.0},
-  {k:"tsh",name:"TSH",unit:"mIU/L",grp:"Metabolic",lo:0.4,hi:4.0},
+  {k:"tsh",name:"TSH",unit:"mIU/L",grp:"Metabolic",lo:0.40,hi:4.50},
   {k:"ft3",name:"Free T3",unit:"pg/mL",grp:"Metabolic",lo:2.3,hi:4.2},
   {k:"ft4",name:"Free T4",unit:"ng/dL",grp:"Metabolic",lo:0.8,hi:1.8},
   {k:"rt3",name:"Reverse T3",unit:"ng/dL",grp:"Metabolic",lo:8,hi:25},
-  {k:"chol",name:"Total Cholesterol",unit:"mg/dL",grp:"Lipids",lo:125,hi:200},
+  // Lipids
+  {k:"chol",name:"Total Cholesterol",unit:"mg/dL",grp:"Lipids",lo:0,hi:200},
   {k:"ldl",name:"LDL",unit:"mg/dL",grp:"Lipids",lo:0,hi:100},
-  {k:"hdl",name:"HDL",unit:"mg/dL",grp:"Lipids",lo:40,hi:90},
+  {k:"hdl",name:"HDL",unit:"mg/dL",grp:"Lipids",lo:40,hi:200},
   {k:"trig",name:"Triglycerides",unit:"mg/dL",grp:"Lipids",lo:0,hi:150},
+  {k:"nonhdl",name:"Non-HDL Cholesterol",unit:"mg/dL",grp:"Lipids",lo:0,hi:130},
+  {k:"chol_hdl_ratio",name:"Chol/HDL Ratio",unit:"",grp:"Lipids",lo:0,hi:5.0},
   {k:"apob",name:"ApoB",unit:"mg/dL",grp:"Lipids",lo:0,hi:90},
   {k:"lpa",name:"Lp(a)",unit:"nmol/L",grp:"Lipids",lo:0,hi:75},
-  {k:"alp",name:"ALP",unit:"U/L",grp:"Liver",lo:44,hi:147},
-  {k:"alt",name:"ALT",unit:"U/L",grp:"Liver",lo:7,hi:55},
-  {k:"ast",name:"AST",unit:"U/L",grp:"Liver",lo:8,hi:48},
-  {k:"ggt",name:"GGT",unit:"U/L",grp:"Liver",lo:8,hi:61},
-  {k:"bilirubin",name:"Bilirubin",unit:"mg/dL",grp:"Liver",lo:0.1,hi:1.2},
-  {k:"albumin",name:"Albumin",unit:"g/dL",grp:"Liver",lo:3.5,hi:5.0},
-  {k:"hct",name:"Hematocrit",unit:"%",grp:"Blood",lo:39,hi:50},
-  {k:"hgb",name:"Hemoglobin",unit:"g/dL",grp:"Blood",lo:13.5,hi:17.5},
-  {k:"rbc",name:"RBC",unit:"M/µL",grp:"Blood",lo:4.7,hi:6.1},
-  {k:"wbc",name:"WBC",unit:"K/µL",grp:"Blood",lo:3.4,hi:10.8},
-  {k:"platelets",name:"Platelets",unit:"K/µL",grp:"Blood",lo:150,hi:450},
-  {k:"creatinine",name:"Creatinine",unit:"mg/dL",grp:"Kidney",lo:0.74,hi:1.35},
-  {k:"bun",name:"BUN",unit:"mg/dL",grp:"Kidney",lo:7,hi:20},
-  {k:"egfr",name:"eGFR",unit:"mL/min",grp:"Kidney",lo:60,hi:120},
-  {k:"uric",name:"Uric Acid",unit:"mg/dL",grp:"Kidney",lo:3.5,hi:7.2},
-  {k:"sodium",name:"Sodium",unit:"mEq/L",grp:"Electrolytes & Minerals",lo:135,hi:145},
-  {k:"potassium",name:"Potassium",unit:"mEq/L",grp:"Electrolytes & Minerals",lo:3.5,hi:5.2},
-  {k:"magnesium",name:"Magnesium",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:1.7,hi:2.2},
+  // Liver
+  {k:"alp",name:"ALP",unit:"U/L",grp:"Liver",lo:35,hi:144},
+  {k:"alt",name:"ALT",unit:"U/L",grp:"Liver",lo:9,hi:46},
+  {k:"ast",name:"AST",unit:"U/L",grp:"Liver",lo:10,hi:35},
+  {k:"ggt",name:"GGT",unit:"U/L",grp:"Liver",lo:3,hi:95},
+  {k:"ldh",name:"LDH",unit:"U/L",grp:"Liver",lo:120,hi:250},
+  {k:"bilirubin",name:"Bilirubin, Total",unit:"mg/dL",grp:"Liver",lo:0.2,hi:1.2},
+  {k:"albumin",name:"Albumin",unit:"g/dL",grp:"Liver",lo:3.6,hi:5.1},
+  {k:"protein_total",name:"Total Protein",unit:"g/dL",grp:"Liver",lo:6.1,hi:8.1},
+  {k:"globulin",name:"Globulin",unit:"g/dL",grp:"Liver",lo:1.9,hi:3.7},
+  {k:"ag_ratio",name:"Albumin/Globulin Ratio",unit:"",grp:"Liver",lo:1.0,hi:2.5},
+  // Blood
+  {k:"hct",name:"Hematocrit",unit:"%",grp:"Blood",lo:39.4,hi:51.1},
+  {k:"hgb",name:"Hemoglobin",unit:"g/dL",grp:"Blood",lo:13.2,hi:17.1},
+  {k:"rbc",name:"RBC",unit:"M/µL",grp:"Blood",lo:4.20,hi:5.80},
+  {k:"wbc",name:"WBC",unit:"K/µL",grp:"Blood",lo:3.8,hi:10.8},
+  {k:"platelets",name:"Platelets",unit:"K/µL",grp:"Blood",lo:140,hi:400},
+  {k:"mcv",name:"MCV",unit:"fL",grp:"Blood",lo:81.4,hi:101.7},
+  {k:"mch",name:"MCH",unit:"pg",grp:"Blood",lo:27.0,hi:33.0},
+  {k:"mchc",name:"MCHC",unit:"g/dL",grp:"Blood",lo:31.6,hi:35.4},
+  {k:"rdw",name:"RDW",unit:"%",grp:"Blood",lo:11.0,hi:15.0},
+  {k:"mpv",name:"MPV",unit:"fL",grp:"Blood",lo:7.5,hi:12.5},
+  {k:"neut_abs",name:"Absolute Neutrophils",unit:"/µL",grp:"Blood",lo:1500,hi:7800},
+  {k:"lymph_abs",name:"Absolute Lymphocytes",unit:"/µL",grp:"Blood",lo:850,hi:3900},
+  {k:"mono_abs",name:"Absolute Monocytes",unit:"/µL",grp:"Blood",lo:200,hi:950},
+  {k:"eos_abs",name:"Absolute Eosinophils",unit:"/µL",grp:"Blood",lo:15,hi:500},
+  {k:"baso_abs",name:"Absolute Basophils",unit:"/µL",grp:"Blood",lo:0,hi:200},
+  {k:"neut_pct",name:"Neutrophils %",unit:"%",grp:"Blood",lo:null,hi:null},
+  {k:"lymph_pct",name:"Lymphocytes %",unit:"%",grp:"Blood",lo:null,hi:null},
+  {k:"mono_pct",name:"Monocytes %",unit:"%",grp:"Blood",lo:null,hi:null},
+  {k:"eos_pct",name:"Eosinophils %",unit:"%",grp:"Blood",lo:null,hi:null},
+  {k:"baso_pct",name:"Basophils %",unit:"%",grp:"Blood",lo:null,hi:null},
+  // Kidney
+  {k:"creatinine",name:"Creatinine",unit:"mg/dL",grp:"Kidney",lo:0.70,hi:1.30},
+  {k:"bun",name:"BUN",unit:"mg/dL",grp:"Kidney",lo:7,hi:25},
+  {k:"egfr",name:"eGFR",unit:"mL/min",grp:"Kidney",lo:60,hi:200},
+  {k:"uric",name:"Uric Acid",unit:"mg/dL",grp:"Kidney",lo:4.0,hi:8.0},
+  // Electrolytes & Minerals
+  {k:"sodium",name:"Sodium",unit:"mmol/L",grp:"Electrolytes & Minerals",lo:135,hi:146},
+  {k:"potassium",name:"Potassium",unit:"mmol/L",grp:"Electrolytes & Minerals",lo:3.5,hi:5.3},
+  {k:"chloride",name:"Chloride",unit:"mmol/L",grp:"Electrolytes & Minerals",lo:98,hi:110},
+  {k:"co2",name:"Carbon Dioxide",unit:"mmol/L",grp:"Electrolytes & Minerals",lo:20,hi:32},
+  {k:"magnesium",name:"Magnesium",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:1.5,hi:2.5},
   {k:"calcium",name:"Calcium",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:8.6,hi:10.3},
+  {k:"phosphate",name:"Phosphate",unit:"mg/dL",grp:"Electrolytes & Minerals",lo:2.5,hi:4.5},
   {k:"zinc",name:"Zinc",unit:"µg/dL",grp:"Electrolytes & Minerals",lo:60,hi:120},
+  // Vitamins & Iron
   {k:"vitd",name:"Vitamin D",unit:"ng/mL",grp:"Vitamins & Iron",lo:30,hi:100},
   {k:"b12",name:"Vitamin B12",unit:"pg/mL",grp:"Vitamins & Iron",lo:200,hi:900},
   {k:"folate",name:"Folate",unit:"ng/mL",grp:"Vitamins & Iron",lo:3,hi:17},
-  {k:"ferritin",name:"Ferritin",unit:"ng/mL",grp:"Vitamins & Iron",lo:30,hi:400},
-  {k:"iron",name:"Iron",unit:"µg/dL",grp:"Vitamins & Iron",lo:65,hi:175},
-  {k:"tibc",name:"TIBC",unit:"µg/dL",grp:"Vitamins & Iron",lo:250,hi:450},
-  {k:"tsat",name:"Transferrin Saturation",unit:"%",grp:"Vitamins & Iron",lo:20,hi:50},
+  {k:"ferritin",name:"Ferritin",unit:"ng/mL",grp:"Vitamins & Iron",lo:38,hi:380},
+  {k:"iron",name:"Iron",unit:"µg/dL",grp:"Vitamins & Iron",lo:50,hi:180},
+  {k:"tibc",name:"TIBC",unit:"µg/dL",grp:"Vitamins & Iron",lo:250,hi:425},
+  {k:"tsat",name:"Transferrin Saturation",unit:"%",grp:"Vitamins & Iron",lo:20,hi:48},
+  // Inflammation & Cardio
   {k:"crp",name:"CRP",unit:"mg/L",grp:"Inflammation & Cardio",lo:0,hi:3.0},
   {k:"hscrp",name:"hs-CRP",unit:"mg/L",grp:"Inflammation & Cardio",lo:0,hi:1.0},
-  {k:"homocysteine",name:"Homocysteine",unit:"µmol/L",grp:"Inflammation & Cardio",lo:0,hi:15},
-  {k:"psa",name:"PSA",unit:"ng/mL",grp:"Other",lo:0,hi:4},
+  {k:"homocysteine",name:"Homocysteine",unit:"µmol/L",grp:"Inflammation & Cardio",lo:0,hi:15.2},
+  // Other
+  {k:"psa",name:"PSA, Total",unit:"ng/mL",grp:"Other",lo:0,hi:4.0},
+  {k:"psa_free",name:"PSA, Free",unit:"ng/mL",grp:"Other",lo:null,hi:null},
+  {k:"psa_pct_free",name:"PSA, % Free",unit:"%",grp:"Other",lo:25,hi:100},
 ];
 function allMarkers(){ return LAB_MARKERS.concat(state.labMarkers||[]); }
 function markerByKey(k){ return allMarkers().find(m=>m.k===k); }
