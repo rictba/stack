@@ -1,13 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9b8ff2"/>
-      <stop offset="1" stop-color="#7B6FE8"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <g transform="rotate(45 256 256)">
-    <rect x="189" y="120" width="134" height="272" rx="67" fill="#F5F6FA"/>
-    <path d="M189 256 h134 v69 a67 67 0 0 1 -67 67 h0 a67 67 0 0 1 -67 -67 z" fill="#D2CDFA"/>
-  </g>
+  <rect width="512" height="512" fill="#F6F4EE"/>
+  <!-- stacked tower (widest at bottom), alternating terracotta tones -->
+  <rect x="106"   y="386" width="300" height="50" rx="25" fill="#9B4527"/>
+  <rect x="131"   y="324" width="250" height="50" rx="25" fill="#C56B4A"/>
+  <rect x="153.5" y="262" width="205" height="50" rx="25" fill="#9B4527"/>
+  <rect x="176"   y="200" width="160" height="50" rx="25" fill="#C56B4A"/>
+  <rect x="196"   y="138" width="120" height="50" rx="25" fill="#9B4527"/>
+  <rect x="216"   y="76"  width="80"  height="50" rx="25" fill="#C56B4A"/>
 </svg>
