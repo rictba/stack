@@ -1,4 +1,4 @@
-const CACHE = 'stack-v9';
+const CACHE = 'stack-v10';
 const ASSETS = [
   '/stack/',
   '/stack/index.html',
