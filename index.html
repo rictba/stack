@@ -2563,6 +2563,7 @@ function renderOb(){
   }
   else if(step==="dosing"){
     html=`<h2>We'll keep you on track with your dosing</h2><p class="sub">Daily, every X days, twice a week, on/off cycles. Set it once and Stack handles the rest.</p>
+      <div style="margin:auto 0;width:100%">
       <div class="ob-mock">
         <div class="ob-mhead"><b>Today</b><span>Mon, May 5</span></div>
         <div class="ob-msec">MORNING</div>
@@ -2580,11 +2581,12 @@ function renderOb(){
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;justify-content:center">
         <span class="ob-chip">Daily</span><span class="ob-chip">5 on / 2 off</span><span class="ob-chip">2× / week</span><span class="ob-chip">Titration</span>
-      </div>`;
+      </div></div>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="system"){
     html=`<h2>We'll show you what's in your system</h2><p class="sub">Estimated levels based on your dose, timing, and pharmacokinetics.</p>
+      <div style="margin:auto 0;width:100%">
       <div class="ob-mock">
         <div class="ob-mtop">
           <div><div class="ob-mtitle">Retatrutide</div><div class="ob-msub">2.5 mg · weekly</div></div>
@@ -2603,11 +2605,12 @@ function renderOb(){
           <div class="ob-mstat"><div class="ob-msub">Half-life</div><div class="v">~6 days</div></div>
           <div class="ob-mstat"><div class="ob-msub">Next dose</div><div class="v">Sun</div></div>
         </div>
-      </div>`;
+      </div></div>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="progress"){
     html=`<h2>We'll watch your progress unfold</h2><p class="sub">Weight, body comp, labs, and daily assessments — all on one timeline.</p>
+      <div style="margin:auto 0;width:100%">
       <div class="ob-mock">
         <div class="ob-mtop">
           <div><div class="ob-msub">BODY WEIGHT</div><div class="ob-mbig" style="color:#fff">213 <span style="font-size:14px;color:#9aa0a6;font-weight:600">lbs</span></div></div>
@@ -2627,7 +2630,7 @@ function renderOb(){
           <span class="ob-mpill ob-mstat">Waist −3 in</span>
           <span class="ob-mpill ob-mstat">Labs · 45</span>
         </div>
-      </div>`;
+      </div></div>`;
     footHtml=obFoot("Continue");
   }
   else if(step==="privacy"){
