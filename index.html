@@ -2492,6 +2492,13 @@ function maybeDisclaimer(){ if(!state.hideDisclaimer) $("#disclaimer").classList
 
 /* ---------- onboarding (bright, multi-step) ---------- */
 const OB_STEPS = ["welcome","goal","achieve","challenges","statement","dosing","system","progress","privacy","makeyours","name","metrics","source","features","setup","ready"];
+const OB_LOGO = `<svg viewBox="96 66 320 380" width="84" style="display:block;margin:0 auto 12px">
+  <rect x="106" y="386" width="300" height="50" rx="25" fill="#1B3A5C"/>
+  <rect x="131" y="324" width="250" height="50" rx="25" fill="#2980B9"/>
+  <rect x="153.5" y="262" width="205" height="50" rx="25" fill="#1B3A5C"/>
+  <rect x="176" y="200" width="160" height="50" rx="25" fill="#2980B9"/>
+  <rect x="196" y="138" width="120" height="50" rx="25" fill="#1B3A5C"/>
+  <rect x="216" y="76" width="80" height="50" rx="25" fill="#2980B9"/></svg>`;
 let obIdx = 0;
 const prof = state.profile = state.profile || {};
 function startOnboarding(){ obIdx=0; $("#onboard").classList.add("open"); renderOb(); }
@@ -2514,7 +2521,7 @@ function renderOb(){
 
   if(step==="welcome"){
     body.className="ob-body center";
-    html=`<div class="ob-brand" style="font-size:48px;letter-spacing:-1.5px;margin-bottom:26px">Stack</div>
+    html=`${OB_LOGO}<div class="ob-brand" style="font-size:48px;letter-spacing:-1.5px;margin-bottom:26px">Stack</div>
       <h2>Track what you take — and what actually works</h2>
       <p class="sub">Stack keeps your doses, assessments, and progress in one place, so you can see what's moving the needle.</p>`;
     footHtml=obFoot("Get started");
@@ -2547,7 +2554,7 @@ function renderOb(){
   }
   else if(step==="statement"){
     body.className="ob-body center";
-    html=`<div class="ob-brand" style="margin-bottom:28px">Stack</div>
+    html=`${OB_LOGO}<div class="ob-brand" style="margin-bottom:28px">Stack</div>
       <h2 style="font-size:28px">Everything in one place — doses, assessments, results — so you can finally tell what's making the difference.</h2>`;
     footHtml=obFoot("Continue");
   }
@@ -2651,7 +2658,7 @@ function renderOb(){
   }
   else if(step==="setup"){
     body.className="ob-body center";
-    html=`<div class="ob-brand" style="margin-bottom:14px">Stack</div>
+    html=`${OB_LOGO}<div class="ob-brand" style="margin-bottom:14px">Stack</div>
       <h2>Build your stack</h2>
       <p class="sub">Add your compounds anytime from the Protocol tab — tap the <b>+</b> to add a peptide or supplement, or pull from the Library.</p>`;
     footHtml=`<button class="ob-btn" id="obLater">Continue</button>`;
