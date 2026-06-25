@@ -298,6 +298,9 @@
   .ob-mbig{font-size:26px;font-weight:800;color:var(--accent-dim)}
   .ob-mpill{background:rgba(41,128,185,.25);color:#A9CCE3;border-radius:99px;padding:5px 11px;font-size:13px;font-weight:700;white-space:nowrap}
   .ob-mx{display:flex;justify-content:space-between;font-size:11px;color:#9aa0a6;margin-top:6px}
+  .ob-chip{background:var(--ocard);border:1px solid var(--oln);border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--otx)}
+  .ob-mstat{flex:1;text-align:center}
+  .ob-mstat .v{font-weight:700;font-size:15px;color:#fff}
 </style>
 </head>
 <body>
@@ -2567,6 +2570,16 @@ function renderOb(){
         <div class="ob-mrow"><span class="nm">BPC-157</span><span class="ds">250 mcg</span><span class="tm">8:00 AM</span><span class="chk">✓</span></div>
         <div class="ob-msec">EVENING</div>
         <div class="ob-mrow"><span class="nm">Testosterone</span><span class="ds">100 mg</span><span class="tm">9:00 PM</span><span class="chk">✓</span></div>
+        <div style="border-top:1px solid #2a2d33;margin-top:4px;padding-top:13px;display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#9aa0a6;margin-bottom:6px"><span>Today complete</span><span>3 / 3</span></div>
+            <div style="height:7px;border-radius:99px;background:#2a2d33"><div style="width:100%;height:100%;border-radius:99px;background:var(--oacc)"></div></div>
+          </div>
+          <span class="ob-mpill">🔥 12-day streak</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;justify-content:center">
+        <span class="ob-chip">Daily</span><span class="ob-chip">5 on / 2 off</span><span class="ob-chip">2× / week</span><span class="ob-chip">Titration</span>
       </div>`;
     footHtml=obFoot("Continue");
   }
@@ -2577,12 +2590,19 @@ function renderOb(){
           <div><div class="ob-mtitle">Retatrutide</div><div class="ob-msub">2.5 mg · weekly</div></div>
           <div style="text-align:right"><div class="ob-msub">NOW</div><div class="ob-mbig">3.2 mg</div></div>
         </div>
-        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
-          <defs><linearGradient id="pkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".45"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
-          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64 L300 140 L8 140 Z" fill="url(#pkg)"/>
-          <path d="M8 118 L46 60 L78 96 L108 50 L140 90 L168 42 L200 86 L228 34 L260 82 L300 64" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <svg viewBox="0 0 320 178" width="100%" style="height:172px;display:block;margin-top:8px">
+          <defs><linearGradient id="pkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".4"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <path d="M12 158 C66 158 70 86 132 70 C188 56 214 50 308 48 L308 164 L12 164 Z" fill="url(#pkg)"/>
+          <path d="M12 158 C66 158 70 86 132 70 C188 56 214 50 308 48" fill="none" stroke="#2980B9" stroke-width="3" stroke-linecap="round"/>
+          <line x1="308" y1="22" x2="308" y2="164" stroke="#2a2d33" stroke-dasharray="3 3"/>
+          <circle cx="308" cy="48" r="5.5" fill="#2980B9" stroke="#16181c" stroke-width="2.5"/>
         </svg>
-        <div class="ob-mx"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span></div>
+        <div class="ob-mx"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Now</span></div>
+        <div style="border-top:1px solid #2a2d33;margin-top:12px;padding-top:13px;display:flex">
+          <div class="ob-mstat"><div class="ob-msub">Peak</div><div class="v">4.1 mg</div></div>
+          <div class="ob-mstat"><div class="ob-msub">Half-life</div><div class="v">~6 days</div></div>
+          <div class="ob-mstat"><div class="ob-msub">Next dose</div><div class="v">Sun</div></div>
+        </div>
       </div>`;
     footHtml=obFoot("Continue");
   }
@@ -2593,12 +2613,20 @@ function renderOb(){
           <div><div class="ob-msub">BODY WEIGHT</div><div class="ob-mbig" style="color:#fff">213 <span style="font-size:14px;color:#9aa0a6;font-weight:600">lbs</span></div></div>
           <div style="text-align:right"><span class="ob-mpill">−18.6 lbs</span><div class="ob-msub" style="margin-top:6px">12 weeks</div></div>
         </div>
-        <svg viewBox="0 0 320 150" width="100%" preserveAspectRatio="none" style="height:140px;display:block;margin-top:6px">
-          <defs><linearGradient id="wgo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".4"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
-          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130 L310 140 L10 140 Z" fill="url(#wgo)"/>
-          <path d="M10 34 L70 64 L130 86 L190 104 L250 122 L310 130" fill="none" stroke="#2980B9" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <svg viewBox="0 0 320 170" width="100%" style="height:165px;display:block;margin-top:8px">
+          <defs><linearGradient id="wgo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2980B9" stop-opacity=".38"/><stop offset="1" stop-color="#2980B9" stop-opacity="0"/></linearGradient></defs>
+          <line x1="12" y1="150" x2="308" y2="150" stroke="#2a2d33" stroke-dasharray="4 4"/>
+          <text x="14" y="146" fill="#6b7077" font-size="10">goal 195</text>
+          <path d="M12 34 C92 50 150 104 200 120 C246 134 282 140 308 142 L308 160 L12 160 Z" fill="url(#wgo)"/>
+          <path d="M12 34 C92 50 150 104 200 120 C246 134 282 140 308 142" fill="none" stroke="#2980B9" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="308" cy="142" r="5.5" fill="#2980B9" stroke="#16181c" stroke-width="2.5"/>
         </svg>
         <div class="ob-mx"><span>Week 1</span><span>Week 6</span><span>Week 12</span></div>
+        <div style="border-top:1px solid #2a2d33;margin-top:12px;padding-top:13px;display:flex;gap:8px">
+          <span class="ob-mpill ob-mstat">Weight −18.6 lb</span>
+          <span class="ob-mpill ob-mstat">Waist −3 in</span>
+          <span class="ob-mpill ob-mstat">Labs · 45</span>
+        </div>
       </div>`;
     footHtml=obFoot("Continue");
   }
