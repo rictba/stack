@@ -736,6 +736,7 @@ function load(){
   d.labs = Array.isArray(d.labs) ? d.labs : [];
   d.labMarkers = Array.isArray(d.labMarkers) ? d.labMarkers : [];
   d.cycledPeptides = Array.isArray(d.cycledPeptides) ? d.cycledPeptides : [];
+  d.scheduledItems = Array.isArray(d.scheduledItems) ? d.scheduledItems : [];
   // founder-only one-time lab preload (won't re-add if edited/deleted)
   if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.founderLabSeed){
     d.labs.push({ id:uid(), date:FOUNDER_LAB_PRELOAD.date, provider:FOUNDER_LAB_PRELOAD.provider,
@@ -939,6 +940,10 @@ function cycledDue(item, date){
   const nextDue = new Date(lastEnd.getTime() + (item.cycle.intervalDays||180)*86400000);
   return new Date(today+"T00:00:00") >= nextDue;
 }
+function scheduledDue(sched, date){
+  if(!sched || !sched.startDate) return false;
+  return todayKey(new Date(sched.startDate)) <= todayKey(date||viewDate);
+}
 function addCycledPeptide(itemId){
   const cycled = (state.cycledPeptides||[]).find(p=>p.id===itemId);
   if(!cycled) return;
@@ -1043,6 +1048,26 @@ function renderToday(){
       </div>`;
     });
   });
+  const scheduledDueList = (state.scheduledItems||[]).filter(s=>scheduledDue(s, viewDate));
+  if(scheduledDueList.length > 0){
+    const schedHtml = scheduledDueList.map(s=>{
+      return `<div class="progress-card" style="border-color:var(--accent);background:rgba(41,128,185,0.08);margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+          <div>
+            <div style="font-weight:600;color:var(--text)">${esc(s.name)}</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px">
+              Scheduled protocol start date reached
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="mini-btn" data-add-scheduled="${s.id}">+ Add</button>
+            <button class="mini-btn" data-dismiss-scheduled="${s.id}">Dismiss</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+    html = schedHtml + html;
+  }
   const cycledDueList = (state.cycledPeptides||[]).filter(p=>cycledDue(p, viewDate));
   if(cycledDueList.length > 0){
     const cycleHtml = cycledDueList.map(p=>{
@@ -1070,6 +1095,22 @@ function renderToday(){
   list.innerHTML = html;
   $("#progTxt").textContent = done+" / "+total;
   $("#progBar").style.width = (total? (done/total*100):0)+"%";
+  list.querySelectorAll("[data-add-scheduled]").forEach(el=>el.onclick=()=>{
+    const s = state.scheduledItems.find(x=>x.id===el.dataset.addScheduled);
+    if(!s) return;
+    const lib = state.library.find(x=>x.id===s.libraryId);
+    if(!lib) return;
+    openEditor(null, {name:lib.name, type:lib.kind||"peptide"});
+    state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
+    save();
+  });
+  list.querySelectorAll("[data-dismiss-scheduled]").forEach(el=>el.onclick=()=>{
+    const s = state.scheduledItems.find(x=>x.id===el.dataset.dismissScheduled);
+    if(s){
+      state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
+      save(); render();
+    }
+  });
   list.querySelectorAll("[data-add-cycle]").forEach(el=>el.onclick=()=>addCycledPeptide(el.dataset.addCycle));
   list.querySelectorAll("[data-snooze-cycle]").forEach(el=>el.onclick=()=>snoozeCycle(el.dataset.snoozeCycle));
   list.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{
@@ -2014,6 +2055,33 @@ function openEditor(id, prefill){
   $("#fCancel").onclick=closeSheet;
   $("#scrim").classList.add("open");
 }
+function openScheduleSheet(libItem, schedId){
+  const now = new Date();
+  const minDate = now.toISOString().split('T')[0];
+  const existing = schedId ? state.scheduledItems.find(s => s.id === schedId) : null;
+  let startDate = existing ? existing.startDate : minDate;
+  $("#sheet").innerHTML = `
+    <h2>${existing ? 'Edit' : 'Schedule'} ${esc(libItem.name)}</h2>
+    <div class="field"><label>Start date</label>
+      <input id="schedDate" type="date" value="${startDate}" min="${minDate}">
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin:12px 0">When this date arrives, you'll be asked if you want to add ${esc(libItem.name)} to your protocol. You can start earlier or delete this anytime.</p>
+    <button class="btn" id="schedSave">${existing ? 'Update' : 'Schedule'}</button>
+    <button class="btn ghost" id="schedCancel">Cancel</button>`;
+  $("#schedDate").onchange = e => startDate = e.target.value;
+  $("#schedSave").onclick = () => {
+    if(!startDate) { alert("Please select a date"); return; }
+    const sched = existing || {id: uid()};
+    sched.libraryId = libItem.id;
+    sched.name = libItem.name;
+    sched.kind = libItem.kind || "peptide";
+    sched.startDate = startDate;
+    if(!existing) state.scheduledItems.push(sched);
+    save(); closeSheet(); render();
+  };
+  $("#schedCancel").onclick = closeSheet;
+  $("#scrim").classList.add("open");
+}
 function seg(sel, cb){ const c=$(sel); c.querySelectorAll("button").forEach(b=>b.onclick=()=>{
   c.querySelectorAll("button").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); cb(b.dataset.v); }); }
 function closeSheet(){ $("#scrim").classList.remove("open"); $("#sheet").innerHTML=""; }
@@ -2256,9 +2324,29 @@ function renderLibrary(){
   $("#libHeading").textContent = libKind==="peptide" ? "Peptide library" : "Supplement library";
   const list=$("#libList");
   const entries = state.library.filter(p=>(p.kind||"peptide")===libKind);
+  const scheduled = (state.scheduledItems||[]).filter(s => {
+    const lib = state.library.find(p => p.id === s.libraryId);
+    return lib && (lib.kind||"peptide") === libKind;
+  });
   const addLabel = libKind==="peptide" ? "+ Add peptide" : "+ Add supplement";
   const catBtn = libKind==="peptide" ? `<button class="btn" id="libCatalog" style="margin:0 0 12px">✨ Browse popular peptides</button>` : "";
-  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 10px">${addLabel}</button>` + catBtn +
+  const schedSection = scheduled.length > 0 ? `
+    <div style="margin-bottom:16px"><div class="group-label">Scheduled Protocols</div>
+    ${scheduled.map(s => `<div class="card" style="padding:14px;background:var(--accent-dim)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:4px">${esc(s.name)}</div>
+          <div style="font-size:13px;color:var(--muted)">Start: ${formatDate(new Date(s.startDate))}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="mini-btn" data-schedstart="${s.id}" style="white-space:nowrap">Start now</button>
+          <button class="mini-btn" data-schededit="${s.id}" style="white-space:nowrap">Edit</button>
+          <button class="mini-btn" data-scheddel="${s.id}" style="color:var(--red);white-space:nowrap">Delete</button>
+        </div>
+      </div>
+    </div>`).join("")}
+    </div>` : "";
+  list.innerHTML = schedSection + `<button class="btn ghost" id="libAdd" style="margin:0 0 10px">${addLabel}</button>` + catBtn +
     (entries.length===0 ? emptyState("📖",`No ${libKind}s yet`,`Tap “${addLabel}”${libKind==="peptide"?" or browse the popular list":""} to add a ${libKind} reference.`) :
     entries.map(p=>`
     <div class="card" style="padding:14px">
@@ -2273,6 +2361,7 @@ function renderLibrary(){
           ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
           <div style="margin-top:10px">
             <button class="mini-btn" data-libadd="${p.id}">+ Add to protocol</button>
+            <button class="mini-btn" data-libsched="${p.id}" style="margin-left:8px">Future scheduling</button>
             <button class="mini-btn" data-libedit="${p.id}" style="margin-left:8px">Edit</button>
             <button class="mini-btn" data-libdel="${p.id}" style="color:var(--red);margin-left:8px">Remove</button>
           </div>
@@ -2285,11 +2374,38 @@ function renderLibrary(){
     const p=state.library.find(x=>x.id===el.dataset.libadd);
     openEditor(null, {name:p.name, type:(p.kind||"peptide")});
   });
+  list.querySelectorAll("[data-libsched]").forEach(el=>el.onclick=()=>{
+    const p=state.library.find(x=>x.id===el.dataset.libsched);
+    openScheduleSheet(p);
+  });
   list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
   list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
     const p=state.library.find(x=>x.id===el.dataset.libdel);
     if(confirm(`Remove "${p.name}" from the library?`)){
       state.library=state.library.filter(x=>x.id!==p.id); save(); render();
+    }
+  });
+  list.querySelectorAll("[data-schedstart]").forEach(el=>el.onclick=()=>{
+    const s=state.scheduledItems.find(x=>x.id===el.dataset.schedstart);
+    if(!s) return;
+    const lib=state.library.find(x=>x.id===s.libraryId);
+    if(!lib) return;
+    openEditor(null, {name:lib.name, type:lib.kind||"peptide"});
+    state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
+    save();
+  });
+  list.querySelectorAll("[data-schededit]").forEach(el=>el.onclick=()=>{
+    const s=state.scheduledItems.find(x=>x.id===el.dataset.schededit);
+    if(!s) return;
+    const lib=state.library.find(x=>x.id===s.libraryId);
+    if(!lib) return;
+    openScheduleSheet(lib, s.id);
+  });
+  list.querySelectorAll("[data-scheddel]").forEach(el=>el.onclick=()=>{
+    const s=state.scheduledItems.find(x=>x.id===el.dataset.scheddel);
+    if(s && confirm(`Delete scheduled ${s.name}?`)){
+      state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
+      save(); render();
     }
   });
 }
