@@ -925,9 +925,23 @@ function siteRecency(item){
   siteHistory(item).forEach(x=>{ const d=daysAgoKey(x.date); if(m[x.site]==null||d<m[x.site]) m[x.site]=d; });
   return m;
 }
+function todaysSites(){
+  const tk=todayKey(viewDate), sites=[];
+  const dl=state.logs[tk]; if(!dl) return sites;
+  Object.keys(dl).forEach(key=>{
+    const e=dl[key], site=(e&&typeof e==="object")?e.site:"";
+    if(site && !sites.includes(site)) sites.push(site);
+  });
+  return sites;
+}
 function suggestSite(item){
-  const rec=siteRecency(item); let best=INJECT_SITES[0], score=-1;
-  INJECT_SITES.forEach(s=>{ const v=rec[s]==null?99999:rec[s]; if(v>score){score=v; best=s;} });
+  const rec=siteRecency(item), todaySites=todaysSites();
+  let best=INJECT_SITES[0], score=-1;
+  INJECT_SITES.forEach(s=>{
+    const isUsedToday = todaySites.includes(s) ? -999 : 0;
+    const v = (rec[s]==null?99999:rec[s]) + isUsedToday;
+    if(v>score){score=v; best=s;}
+  });
   return best;
 }
 /* ---------- peptide cycle recall ---------- */
