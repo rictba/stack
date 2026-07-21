@@ -2602,22 +2602,17 @@ function importData(){
 }
 function showUpdatePrompt(){
   $("#sheet").innerHTML = `
-    <h2>Update Stack</h2>
+    <h2>Refreshing...</h2>
     <p style="color:var(--text);margin:12px 0;line-height:1.6">
-      You're on <b>v1.0</b>. Download the latest version to get new features and fixes.
+      Checking for updates and clearing cache.
     </p>
     <p style="color:var(--muted);font-size:13px;margin:12px 0;line-height:1.6">
-      <b>Your data is safe:</b> All protocols, logs, and history are stored on this device. Updating the file won't affect them.
-    </p>
-    <ol style="font-size:13px;color:var(--text);margin:12px 0;line-height:1.8;padding-left:20px">
-      <li>Click the button below to download the latest <b>index.html</b></li>
-      <li>Replace your old Stack file with the new one</li>
-      <li>Open it → all your data is still there</li>
-    </ol>
-    <a href="https://raw.githubusercontent.com/rictba/stack/claude/quirky-gates-fwvxlv/index.html" target="_blank" download="index.html" class="btn" style="display:block;text-align:center;margin:16px 0">📥 Download Latest Version</a>
-    <button class="btn ghost" id="updateCancel">Close</button>`;
-  $("#updateCancel").onclick = closeSheet;
-  $("#scrim").classList.add("open");
+      <b>Your data is safe:</b> All protocols, logs, and history are stored on this device.
+    </p>`;
+  setTimeout(()=>{
+    if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()));
+    location.reload(true);
+  }, 500);
 }
 function openProfileEditor(){
   const p=state.profile=state.profile||{};
