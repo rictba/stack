@@ -936,12 +936,21 @@ function todaysSites(){
 }
 function suggestSite(item){
   const rec=siteRecency(item), todaySites=todaysSites();
-  let best=INJECT_SITES[0], score=-1;
+  let best=null, score=-Infinity;
   INJECT_SITES.forEach(s=>{
-    const isUsedToday = todaySites.includes(s) ? -999 : 0;
-    const v = (rec[s]==null?99999:rec[s]) + isUsedToday;
+    if(todaySites.includes(s)) return; // Skip sites used today
+    const v = (rec[s]==null?99999:rec[s]);
     if(v>score){score=v; best=s;}
   });
+  // If all sites used today, suggest least recently used
+  if(!best){
+    best=INJECT_SITES[0];
+    let oldest=-1;
+    INJECT_SITES.forEach(s=>{
+      const v = (rec[s]==null?99999:rec[s]);
+      if(v>oldest){oldest=v; best=s;}
+    });
+  }
   return best;
 }
 /* ---------- peptide cycle recall ---------- */
