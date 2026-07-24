@@ -7,10 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Stack">
-<link rel="manifest" href="data:application/json,{%22name%22:%22Stack%22,%22short_name%22:%22Stack%22,%22start_url%22:%22%23%22,%22display%22:%22standalone%22,%22background_color%22:%22%23F6F4EE%22,%22theme_color%22:%22%232980B9%22,%22icons%22:[{%22src%22:%22icon.png%22,%22sizes%22:%22192x192%22,%22type%22:%22image/png%22}]}">
-<link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" type="image/png" href="icon.png">
-<title>Stack</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<title>Stack Lite (Free)</title>
 <style>
   :root{
     --bg:#F6F4EE; --surface:#FFFFFF; --surface2:#EFECE4; --line:#E4E1D8;
@@ -549,6 +549,10 @@ const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6F
 const SLOT_ORDER = ["AM","Midday","PM"];
 const SITES = ["Abdomen L","Abdomen R","Thigh L","Thigh R","Glute L","Glute R","Arm L","Arm R","Nasal","Oral","Other"];
 
+	// LITE VERSION: Restrict protocols to 3, hide advanced features
+	const IS_LITE = true;
+	const MAX_PROTOCOLS_LITE = 3;
+
 /* ---------- peptide reference library ---------- */
 const LIBRARY = [
   { name:"CJC-1295 (no DAC)", tag:"Growth hormone", col:"#7B6FE8",
@@ -736,7 +740,6 @@ function load(){
   d.labs = Array.isArray(d.labs) ? d.labs : [];
   d.labMarkers = Array.isArray(d.labMarkers) ? d.labMarkers : [];
   d.cycledPeptides = Array.isArray(d.cycledPeptides) ? d.cycledPeptides : [];
-  d.scheduledItems = Array.isArray(d.scheduledItems) ? d.scheduledItems : [];
   // founder-only one-time lab preload (won't re-add if edited/deleted)
   if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.founderLabSeed){
     d.labs.push({ id:uid(), date:FOUNDER_LAB_PRELOAD.date, provider:FOUNDER_LAB_PRELOAD.provider,
@@ -925,32 +928,9 @@ function siteRecency(item){
   siteHistory(item).forEach(x=>{ const d=daysAgoKey(x.date); if(m[x.site]==null||d<m[x.site]) m[x.site]=d; });
   return m;
 }
-function todaysSites(){
-  const tk=todayKey(viewDate), sites=[];
-  const dl=state.logs[tk]; if(!dl) return sites;
-  Object.keys(dl).forEach(key=>{
-    const e=dl[key], site=(e&&typeof e==="object")?e.site:"";
-    if(site && !sites.includes(site)) sites.push(site);
-  });
-  return sites;
-}
 function suggestSite(item){
-  const rec=siteRecency(item), todaySites=todaysSites();
-  let best=null, score=-Infinity;
-  INJECT_SITES.forEach(s=>{
-    if(todaySites.includes(s)) return; // Skip sites used today
-    const v = (rec[s]==null?99999:rec[s]);
-    if(v>score){score=v; best=s;}
-  });
-  // If all sites used today, suggest least recently used
-  if(!best){
-    best=INJECT_SITES[0];
-    let oldest=-1;
-    INJECT_SITES.forEach(s=>{
-      const v = (rec[s]==null?99999:rec[s]);
-      if(v>oldest){oldest=v; best=s;}
-    });
-  }
+  const rec=siteRecency(item); let best=INJECT_SITES[0], score=-1;
+  INJECT_SITES.forEach(s=>{ const v=rec[s]==null?99999:rec[s]; if(v>score){score=v; best=s;} });
   return best;
 }
 /* ---------- peptide cycle recall ---------- */
@@ -962,10 +942,6 @@ function cycledDue(item, date){
   const lastEnd = new Date(item.cycle.lastEndDate+"T00:00:00");
   const nextDue = new Date(lastEnd.getTime() + (item.cycle.intervalDays||180)*86400000);
   return new Date(today+"T00:00:00") >= nextDue;
-}
-function scheduledDue(sched, date){
-  if(!sched || !sched.startDate) return false;
-  return todayKey(new Date(sched.startDate)) <= todayKey(date||viewDate);
 }
 function addCycledPeptide(itemId){
   const cycled = (state.cycledPeptides||[]).find(p=>p.id===itemId);
@@ -1071,26 +1047,6 @@ function renderToday(){
       </div>`;
     });
   });
-  const scheduledDueList = (state.scheduledItems||[]).filter(s=>scheduledDue(s, viewDate));
-  if(scheduledDueList.length > 0){
-    const schedHtml = scheduledDueList.map(s=>{
-      return `<div class="progress-card" style="border-color:var(--accent);background:rgba(41,128,185,0.08);margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
-          <div>
-            <div style="font-weight:600;color:var(--text)">${esc(s.name)}</div>
-            <div style="font-size:13px;color:var(--muted);margin-top:4px">
-              Scheduled protocol start date reached
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-            <button class="mini-btn" data-add-scheduled="${s.id}">+ Add</button>
-            <button class="mini-btn" data-dismiss-scheduled="${s.id}">Dismiss</button>
-          </div>
-        </div>
-      </div>`;
-    }).join("");
-    html = schedHtml + html;
-  }
   const cycledDueList = (state.cycledPeptides||[]).filter(p=>cycledDue(p, viewDate));
   if(cycledDueList.length > 0){
     const cycleHtml = cycledDueList.map(p=>{
@@ -1118,22 +1074,6 @@ function renderToday(){
   list.innerHTML = html;
   $("#progTxt").textContent = done+" / "+total;
   $("#progBar").style.width = (total? (done/total*100):0)+"%";
-  list.querySelectorAll("[data-add-scheduled]").forEach(el=>el.onclick=()=>{
-    const s = state.scheduledItems.find(x=>x.id===el.dataset.addScheduled);
-    if(!s) return;
-    const lib = state.library.find(x=>x.id===s.libraryId);
-    if(!lib) return;
-    openEditor(null, {name:lib.name, type:lib.kind||"peptide"});
-    state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
-    save();
-  });
-  list.querySelectorAll("[data-dismiss-scheduled]").forEach(el=>el.onclick=()=>{
-    const s = state.scheduledItems.find(x=>x.id===el.dataset.dismissScheduled);
-    if(s){
-      state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
-      save(); render();
-    }
-  });
   list.querySelectorAll("[data-add-cycle]").forEach(el=>el.onclick=()=>addCycledPeptide(el.dataset.addCycle));
   list.querySelectorAll("[data-snooze-cycle]").forEach(el=>el.onclick=()=>snoozeCycle(el.dataset.snoozeCycle));
   list.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{
@@ -1156,7 +1096,7 @@ function renderProtocol(){
     list.innerHTML = emptyState("➕","Build your stack","Tap the <b>+</b> button to add a peptide or supplement.");
     return;
   }
-  list.innerHTML = state.items.map(it=>{
+  if(IS_LITE && state.items.length >= MAX_PROTOCOLS_LITE) { const upgradeCard = `<div class="card" style="padding:14px;margin-bottom:10px;border:1px solid var(--amber);background:rgba(185,121,26,.08)"><div class="item-name" style="color:var(--amber)">⭐ Upgrade to Stack Premium</div><div class="item-sub" style="margin-top:6px;color:var(--text)">You are now using the maximum of 3 protocols in Stack Lite. Upgrade to unlimited protocols, injection site rotation, cycle reminders, and more.</div><a href="https://stak.lemonsqueezy.com" class="btn" style="margin-top:10px;text-decoration:none;text-align:center;display:block">Upgrade Now - $39.95</a></div>`; list.innerHTML = upgradeCard; } list.innerHTML += state.items.map(it=>{
     const sch = scheduleLabel(it.schedule);
     return `<div class="card"><div class="card-head">
       <div class="swatch" style="background:${it.color};height:42px"></div>
@@ -2078,33 +2018,6 @@ function openEditor(id, prefill){
   $("#fCancel").onclick=closeSheet;
   $("#scrim").classList.add("open");
 }
-function openScheduleSheet(libItem, schedId){
-  const now = new Date();
-  const minDate = now.toISOString().split('T')[0];
-  const existing = schedId ? state.scheduledItems.find(s => s.id === schedId) : null;
-  let startDate = existing ? existing.startDate : minDate;
-  $("#sheet").innerHTML = `
-    <h2>${existing ? 'Edit' : 'Schedule'} ${esc(libItem.name)}</h2>
-    <div class="field"><label>Start date</label>
-      <input id="schedDate" type="date" value="${startDate}" min="${minDate}">
-    </div>
-    <p style="font-size:13px;color:var(--muted);margin:12px 0">When this date arrives, you'll be asked if you want to add ${esc(libItem.name)} to your protocol. You can start earlier or delete this anytime.</p>
-    <button class="btn" id="schedSave">${existing ? 'Update' : 'Schedule'}</button>
-    <button class="btn ghost" id="schedCancel">Cancel</button>`;
-  $("#schedDate").onchange = e => startDate = e.target.value;
-  $("#schedSave").onclick = () => {
-    if(!startDate) { alert("Please select a date"); return; }
-    const sched = existing || {id: uid()};
-    sched.libraryId = libItem.id;
-    sched.name = libItem.name;
-    sched.kind = libItem.kind || "peptide";
-    sched.startDate = startDate;
-    if(!existing) state.scheduledItems.push(sched);
-    save(); closeSheet(); render();
-  };
-  $("#schedCancel").onclick = closeSheet;
-  $("#scrim").classList.add("open");
-}
 function seg(sel, cb){ const c=$(sel); c.querySelectorAll("button").forEach(b=>b.onclick=()=>{
   c.querySelectorAll("button").forEach(x=>x.classList.remove("sel")); b.classList.add("sel"); cb(b.dataset.v); }); }
 function closeSheet(){ $("#scrim").classList.remove("open"); $("#sheet").innerHTML=""; }
@@ -2347,29 +2260,9 @@ function renderLibrary(){
   $("#libHeading").textContent = libKind==="peptide" ? "Peptide library" : "Supplement library";
   const list=$("#libList");
   const entries = state.library.filter(p=>(p.kind||"peptide")===libKind);
-  const scheduled = (state.scheduledItems||[]).filter(s => {
-    const lib = state.library.find(p => p.id === s.libraryId);
-    return lib && (lib.kind||"peptide") === libKind;
-  });
   const addLabel = libKind==="peptide" ? "+ Add peptide" : "+ Add supplement";
   const catBtn = libKind==="peptide" ? `<button class="btn" id="libCatalog" style="margin:0 0 12px">✨ Browse popular peptides</button>` : "";
-  const schedSection = scheduled.length > 0 ? `
-    <div style="margin-bottom:16px"><div class="group-label">Scheduled Protocols</div>
-    ${scheduled.map(s => `<div class="card" style="padding:14px;background:var(--accent-dim)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-        <div style="flex:1">
-          <div style="font-weight:600;margin-bottom:4px">${esc(s.name)}</div>
-          <div style="font-size:13px;color:var(--muted)">Start: ${formatDate(new Date(s.startDate))}</div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="mini-btn" data-schedstart="${s.id}" style="white-space:nowrap">Start now</button>
-          <button class="mini-btn" data-schededit="${s.id}" style="white-space:nowrap">Edit</button>
-          <button class="mini-btn" data-scheddel="${s.id}" style="color:var(--red);white-space:nowrap">Delete</button>
-        </div>
-      </div>
-    </div>`).join("")}
-    </div>` : "";
-  list.innerHTML = schedSection + `<button class="btn ghost" id="libAdd" style="margin:0 0 10px">${addLabel}</button>` + catBtn +
+  list.innerHTML = `<button class="btn ghost" id="libAdd" style="margin:0 0 10px">${addLabel}</button>` + catBtn +
     (entries.length===0 ? emptyState("📖",`No ${libKind}s yet`,`Tap “${addLabel}”${libKind==="peptide"?" or browse the popular list":""} to add a ${libKind} reference.`) :
     entries.map(p=>`
     <div class="card" style="padding:14px">
@@ -2384,7 +2277,6 @@ function renderLibrary(){
           ${(p.half||p.duration)?`<div style="font-size:12px;color:var(--muted);margin-top:8px">${p.half?'Half-life '+esc(p.half):''}${p.half&&p.duration?' · ':''}${p.duration?esc(p.duration):''}</div>`:''}
           <div style="margin-top:10px">
             <button class="mini-btn" data-libadd="${p.id}">+ Add to protocol</button>
-            <button class="mini-btn" data-libsched="${p.id}" style="margin-left:8px">Future scheduling</button>
             <button class="mini-btn" data-libedit="${p.id}" style="margin-left:8px">Edit</button>
             <button class="mini-btn" data-libdel="${p.id}" style="color:var(--red);margin-left:8px">Remove</button>
           </div>
@@ -2397,38 +2289,11 @@ function renderLibrary(){
     const p=state.library.find(x=>x.id===el.dataset.libadd);
     openEditor(null, {name:p.name, type:(p.kind||"peptide")});
   });
-  list.querySelectorAll("[data-libsched]").forEach(el=>el.onclick=()=>{
-    const p=state.library.find(x=>x.id===el.dataset.libsched);
-    openScheduleSheet(p);
-  });
   list.querySelectorAll("[data-libedit]").forEach(el=>el.onclick=()=>openLibEditor(el.dataset.libedit));
   list.querySelectorAll("[data-libdel]").forEach(el=>el.onclick=()=>{
     const p=state.library.find(x=>x.id===el.dataset.libdel);
     if(confirm(`Remove "${p.name}" from the library?`)){
       state.library=state.library.filter(x=>x.id!==p.id); save(); render();
-    }
-  });
-  list.querySelectorAll("[data-schedstart]").forEach(el=>el.onclick=()=>{
-    const s=state.scheduledItems.find(x=>x.id===el.dataset.schedstart);
-    if(!s) return;
-    const lib=state.library.find(x=>x.id===s.libraryId);
-    if(!lib) return;
-    openEditor(null, {name:lib.name, type:lib.kind||"peptide"});
-    state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
-    save();
-  });
-  list.querySelectorAll("[data-schededit]").forEach(el=>el.onclick=()=>{
-    const s=state.scheduledItems.find(x=>x.id===el.dataset.schededit);
-    if(!s) return;
-    const lib=state.library.find(x=>x.id===s.libraryId);
-    if(!lib) return;
-    openScheduleSheet(lib, s.id);
-  });
-  list.querySelectorAll("[data-scheddel]").forEach(el=>el.onclick=()=>{
-    const s=state.scheduledItems.find(x=>x.id===el.dataset.scheddel);
-    if(s && confirm(`Delete scheduled ${s.name}?`)){
-      state.scheduledItems = state.scheduledItems.filter(x=>x.id!==s.id);
-      save(); render();
     }
   });
 }
@@ -2553,15 +2418,6 @@ function renderSettings(){
       ${setRow(ICON.trash,'<span style="color:var(--red)">Clear all data</span>', "", 'data-act="clear"')}
     </div>
 
-    <div class="set-grp">Updates</div>
-    <div class="set-card">
-      ${setRow(ICON.download,"Update Stack", '<span class="chev">›</span>', 'data-act="update"')}
-      <div style="padding:15px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)">
-        <div><b>Version:</b> 1.0.1</div>
-        <div style="margin-top:4px"><b>Updated:</b> July 21, 2025</div>
-      </div>
-    </div>
-
     <div class="set-grp">About</div>
     <div class="set-card">
       ${setRow(ICON.shield,"Disclaimer & notices", '<span class="chev">›</span>', 'data-act="disclaimer"')}
@@ -2581,7 +2437,6 @@ function settingsAction(act, el){
   else if(act==="upgrade"){ showUpgrade(); }
   else if(act==="export"){ exportData(); }
   else if(act==="import"){ importData(); }
-  else if(act==="update"){ showUpdatePrompt(); }
   else if(act==="clear"){
     if(confirm("Erase ALL Stack data on this device — protocol, logs, journal, profile, and library customizations? This cannot be undone.")){
       localStorage.removeItem(KEY); location.reload();
@@ -2612,21 +2467,6 @@ function importData(){
     r.readAsText(f);
   };
   inp.click();
-}
-function showUpdatePrompt(){
-  $("#sheet").innerHTML = `
-    <h2>Refreshing...</h2>
-    <p style="color:var(--text);margin:12px 0;line-height:1.6">
-      Checking for updates and clearing cache.
-    </p>
-    <p style="color:var(--muted);font-size:13px;margin:12px 0;line-height:1.6">
-      <b>Your data is safe:</b> All protocols, logs, and history are stored on this device.
-    </p>`;
-  $("#scrim").classList.add("open");
-  setTimeout(()=>{
-    if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()));
-    location.reload(true);
-  }, 500);
 }
 function openProfileEditor(){
   const p=state.profile=state.profile||{};
