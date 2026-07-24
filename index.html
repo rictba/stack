@@ -2618,6 +2618,7 @@ function showUpdatePrompt(){
     <p style="color:var(--muted);font-size:13px;margin:12px 0;line-height:1.6">
       <b>Your data is safe:</b> All protocols, logs, and history are stored on this device.
     </p>`;
+  $("#scrim").classList.add("open");
   setTimeout(()=>{
     if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()));
     location.reload(true);
