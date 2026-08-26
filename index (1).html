@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Stack</title>
+<link rel="manifest" href="/stack/manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#f5f5f5;--card:#fff;--bdr:#e0e0e0;--tx:#1a1a1a;--tx2:#666;--tx3:#999;--blue:#2563eb;--blue2:#dbeafe;--grn:#16a34a;--grn2:#dcfce7;--red:#dc2626;--amb:#d97706;--prp:#7c3aed;--mono:'Courier New',monospace}
+body{font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--tx);max-width:480px;margin:0 auto;padding-bottom:70px;min-height:100vh}
+.tab{display:none;padding:12px}.tab.on{display:block}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--bdr);display:flex;z-index:99;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:10px 4px;border:none;background:none;color:var(--tx3);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+nav button.on{color:var(--blue)}
+.hdr{padding:16px 0 8px;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.sub{font-size:12px;color:var(--tx2);margin-top:2px}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.cp{padding:14px}
+.row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bdr)}
+.row:last-child{border-bottom:none}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.grow{flex:1;min-width:0}
+.nm{font-size:14px;font-weight:600}
+.dt{font-size:12px;color:var(--tx2);margin-top:2px}
+.un{font-size:12px;color:var(--blue);font-family:var(--mono);font-weight:600;margin-top:3px}
+.chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--bdr);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;font-size:14px}
+.chk.done{background:var(--grn);border-color:var(--grn);color:#fff}
+.spc{display:flex;align-items:center;gap:6px}
+.spb{width:26px;height:26px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.spn{font-size:14px;font-weight:600;min-width:20px;text-align:center;font-family:var(--mono)}
+.sec{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
+.sb{flex:1;padding:9px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg);color:var(--tx2);font-size:13px;cursor:pointer;text-align:center;font-weight:600}
+.sb.on{border-color:var(--blue);background:var(--blue);color:#fff}
+.sr{display:flex;gap:6px}
+.btn{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:inherit}
+.btn:active{opacity:.85}
+.bo{background:var(--bg);color:var(--tx2);border:1px solid var(--bdr);border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.br{color:var(--red);border-color:var(--red)}
+.add-btn{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+input,select,textarea{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--tx);width:100%;font-family:inherit}
+textarea{resize:none;min-height:60px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lbl{font-size:11px;color:var(--tx3);font-weight:600;margin-bottom:5px}
+.empty{padding:20px;text-align:center;color:var(--tx3);font-size:13px}
+.site-sel{font-size:11px;padding:5px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--bdr);color:var(--tx2);margin-top:4px;width:auto}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--tx);color:#fff;padding:11px 18px;border-radius:99px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:.2s;pointer-events:none;text-align:center;max-width:90%}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:100;overflow-y:auto}
+.modal.on{display:block}
+.sheet{background:var(--bg);border-radius:16px 16px 0 0;margin-top:60px;padding:18px 16px 90px;min-height:calc(100vh - 60px)}
+.cfo{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:300;align-items:center;justify-content:center}
+.cfo.on{display:flex}
+.cfb{background:var(--card);border-radius:14px;padding:20px;margin:0 20px;max-width:320px}
+.db{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--bdr);background:var(--bg);cursor:pointer;font-weight:600}
+.db.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+.inv-card{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:8px}
+.inv-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.inv-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.inv-stat{background:var(--bg);border-radius:8px;padding:8px;text-align:center}
+.inv-val{font-size:15px;font-weight:700;font-family:var(--mono);color:var(--tx)}
+.inv-lbl{font-size:9px;color:var(--tx3);font-weight:600;text-transform:uppercase;margin-top:2px}
+.inv-bar{height:6px;background:var(--bg);border-radius:3px;margin-top:8px;overflow:hidden}
+.inv-fill{height:100%;border-radius:3px;transition:width .3s}
+.bw-cat{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.4px;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--bdr)}
+.bw-row{display:grid;grid-template-columns:1fr 70px 80px 24px;gap:4px;align-items:center;padding:8px 14px;border-bottom:1px solid var(--bdr);font-size:12px}
+.bw-row:last-child{border-bottom:none}
+.bw-val{font-family:var(--mono);font-weight:600;text-align:right}
+.bw-ref{font-size:10px;color:var(--tx3);text-align:right}
+.bw-ok{color:var(--grn)}.bw-hi{color:var(--red)}.bw-lo{color:var(--amb)}.bw-date-hdr{font-size:11px;color:var(--blue);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--bdr)}
+.lc{background:var(--card);border:1px solid var(--bdr);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.lh{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.lb{display:none;border-top:1px solid var(--bdr)}.lb.open{display:block}
+.lf{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--bdr)}.lf:last-child{border-bottom:none}
+.ll{font-size:10px;color:var(--tx3);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.badge{font-size:10px;background:var(--grn2);color:var(--grn);padding:2px 8px;border-radius:99px;font-weight:700}
+.chip{font-size:12px;padding:6px 12px;border-radius:99px;border:1px solid var(--bdr);background:var(--card);color:var(--tx2);cursor:pointer;font-weight:600}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.rc-res{background:var(--blue2);border:1px solid var(--blue);border-radius:12px;padding:16px;text-align:center;margin-top:10px}
+.rc-big{font-size:42px;font-weight:700;color:var(--blue);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div id="cfo" class="cfo"><div class="cfb"><div id="cf-msg" style="font-size:14px;margin-bottom:16px;line-height:1.5"></div><div style="display:flex;gap:8px"><button class="bo" style="flex:1" onclick="cfRes(false)">Cancel</button><button class="btn" style="flex:1;background:var(--red)" onclick="cfRes(true)">Confirm</button></div></div></div>
+
+<!-- TODAY -->
+<div id="t-today" class="tab on">
+  <div class="hdr"><div>Today<div class="sub" id="t-date"></div></div><button class="add-btn" onclick="openAdd()">+</button></div>
+  <div class="sec">Injections</div>
+  <div class="card" id="t-inj"><div class="empty">No injections today. Tap + to add peptides.</div></div>
+  <div class="sec">Nasal sprays</div>
+  <div class="card" id="t-nas"><div class="empty">No nasal sprays active.</div></div>
+  <div class="sec">Oral</div>
+  <div class="card" id="t-oral"><div class="empty">No oral items active.</div></div>
+  <div class="sec">How do you feel?</div>
+  <div class="card cp">
+    <div class="lbl">Energy (1-5)</div><div class="sr" id="t-energy"></div>
+    <div class="lbl" style="margin-top:12px">Sleep quality (1-5)</div><div class="sr" id="t-sleep"></div>
+    <div class="lbl" style="margin-top:12px">Anxiety (1=calm, 5=high)</div><div class="sr" id="t-anxiety"></div>
+    <div class="lbl" style="margin-top:12px">Hours slept</div>
+    <input type="number" id="t-hrs" min="0" max="14" step="0.5" placeholder="e.g. 7.5" style="width:120px">
+    <div class="lbl" style="margin-top:12px">Notes</div>
+    <textarea id="t-notes" placeholder="Side effects, observations..."></textarea>
+    <button class="btn" style="margin-top:12px" onclick="saveToday()">Save today</button>
+  </div>
+</div>
+
+<!-- LIBRARY (placeholder) -->
+
+<div id="t-library" class="tab">
+  <div class="hdr">Library</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
+    <button class="chip on" onclick="lf('all',this)">All</button>
+    <button class="chip" onclick="lf('recovery',this)">Recovery</button>
+    <button class="chip" onclick="lf('fat',this)">Fat loss</button>
+    <button class="chip" onclick="lf('muscle',this)">Muscle</button>
+    <button class="chip" onclick="lf('cognitive',this)">Cognitive</button>
+    <button class="chip" onclick="lf('antiaging',this)">Anti-aging</button>
+    <button class="chip" onclick="lf('supplement',this)">Supplements</button>
+  </div>
+  <input type="text" id="lib-q" placeholder="Search peptides &amp; supplements..." oninput="renderLib()" style="margin-bottom:10px">
+  <div id="lib-list"></div>
+  <button class="bo" style="width:100%;margin:10px 0" onclick="openAdd()">+ Add Custom Peptide / Supplement</button>
+
+  <div class="sec" style="margin-top:24px">Reconstitution Calculator</div>
+  <div class="card cp">
+    <div class="g2" style="margin-bottom:10px">
+      <div><div class="lbl">Vial (mg)</div><input type="number" id="rc-v" placeholder="10" oninput="rcCalc()"></div>
+      <div><div class="lbl">BAC water (ml)</div><input type="number" id="rc-b" placeholder="3" oninput="rcCalc()"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1"><div class="lbl">Dose</div><input type="number" id="rc-d" placeholder="200" oninput="rcCalc()"></div>
+      <div style="width:80px"><div class="lbl">Unit</div><select id="rc-u" onchange="rcCalc()"><option value="mcg">mcg</option><option value="mg">mg</option></select></div>
+    </div>
+    <div id="rc-out" style="display:none"><div class="rc-res"><div class="rc-big" id="rc-units">&mdash;</div><div style="font-size:13px;color:var(--tx2);margin-top:4px">units on a 1cc syringe</div><div style="font-size:12px;color:var(--tx3);margin-top:6px" id="rc-info"></div></div></div>
+  </div>
+
+  <div class="sec" style="margin-top:24px">Inventory &amp; Run-out Dates</div>
+  <div id="inv-list"><div class="empty">Add peptides with vial info to see inventory.</div></div>
+</div>
+
+
+<!-- SETTINGS -->
+<div id="t-settings" class="tab">
+  <div class="hdr">Settings</div>
+  <div class="sec">My Protocol</div>
+  <div class="card" id="s-list"><div class="empty">No peptides added yet.</div></div>
+  <div class="sec">Data</div>
+  <div class="card cp">
+    <button class="bo br" style="width:100%" onclick="resetAll()">Reset all data</button>
+  </div>
+  <div class="sec">Bloodwork</div>
+  <div class="card" id="bw-display"><div class="empty">No lab results loaded.</div></div>
+  <div class="sec">Core &amp; Cardio Routine</div>
+  <div class="card cp">
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:12px;line-height:1.5">Exercise can't spot-reduce fat, but core work tightens the abdominal wall and improves posture, while cardio + resistance training drive the overall fat loss. Avoid traditional crunches \u2014 they can worsen diastasis recti and pelvic tilt.</div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Weekly Schedule</div>
+    <div style="font-size:12px;line-height:2;margin-bottom:14px">
+      <div><b>Mon</b> \u2014 Full body resistance + core (dead bug, plank)</div>
+      <div><b>Tue</b> \u2014 Zone 2 cardio 30-40 min</div>
+      <div><b>Wed</b> \u2014 Full body resistance + core (bird dog, Pallof press)</div>
+      <div><b>Thu</b> \u2014 Zone 2 cardio 30-40 min</div>
+      <div><b>Fri</b> \u2014 Full body resistance + core (glute bridges, hip flexor stretch)</div>
+      <div><b>Sat</b> \u2014 Golf / active recovery</div>
+      <div><b>Sun</b> \u2014 Rest or light walk</div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Core Exercises</div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <tr style="color:var(--tx3);text-align:left"><th style="padding:4px 0">Exercise</th><th style="padding:4px 0">Sets/Reps</th><th style="padding:4px 0">Targets</th></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Dead bug</td><td>3x10/side</td><td>Deep core</td></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Bird dog</td><td>3x10/side</td><td>Stability</td></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Plank</td><td>3x30-45s</td><td>Bracing</td></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Pallof press</td><td>3x12/side</td><td>Anti-rotation</td></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Glute bridge</td><td>3x15</td><td>Pelvic tilt</td></tr>
+      <tr style="border-top:1px solid var(--bdr)"><td style="padding:6px 0">Hip flexor stretch</td><td>2x30s/side</td><td>Mobility</td></tr>
+    </table>
+    <div style="font-size:11px;color:var(--tx3);margin-top:12px">Expect visible core/posture changes in 2-3 weeks. Overall fat loss changes typically visible in 6-8 weeks with consistent cardio + resistance work.</div>
+  </div>
+</div>
+
+<!-- ADD PEPTIDE MODAL -->
+<div id="add-modal" class="modal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:700">Add Peptide</div>
+      <button style="background:none;border:none;font-size:22px;color:var(--tx3);cursor:pointer;padding:4px" onclick="closeAdd()">&#10005;</button>
+    </div>
+    <div><div class="lbl">Peptide name</div><input type="text" id="a-name" placeholder="e.g. CJC-1295 + Ipamorelin"></div>
+    <div class="g2" style="margin-top:8px">
+      <div><div class="lbl">Dose</div><input type="number" id="a-dose" placeholder="e.g. 200"></div>
+      <div><div class="lbl">Unit</div><select id="a-unit"><option value="mcg">mcg</option><option value="mg">mg</option></select></div>
+    </div>
+    <div class="g2" style="margin-top:8px">
+      <div><div class="lbl">Route</div><select id="a-route"><option>SubQ</option><option>IM</option><option>Nasal</option><option>Oral</option></select></div>
+      <div><div class="lbl">Frequency</div>
+        <select id="a-freq" onchange="aFrq()">
+          <option value="daily">Daily</option><option value="weekdays">Weekdays</option>
+          <option value="every2">Every 2 days</option><option value="every3">Every 3 days</option>
+          <option value="every4">Every 4 days</option><option value="weekly">Weekly</option>
+          <option value="days">Specific days</option>
+        </select>
+      </div>
+    </div>
+    <div id="a-dw" style="display:none;margin-top:8px">
+      <div class="lbl">Select days</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap" id="a-days"></div>
+    </div>
+    <div class="sec">Vial setup (optional)</div>
+    <div class="g2">
+      <div><div class="lbl">Vial (mg)</div><input type="number" id="a-vial" placeholder="e.g. 10" oninput="aCalc()"></div>
+      <div><div class="lbl">BAC water (ml)</div><input type="number" id="a-bac" placeholder="e.g. 3" oninput="aCalc()"></div>
+    </div>
+    <div id="a-calc" style="display:none;margin-top:8px;background:var(--blue2);border:1px solid var(--blue);border-radius:10px;padding:10px;text-align:center">
+      <span style="font-size:20px;font-weight:700;color:var(--blue);font-family:var(--mono)" id="a-cu"></span>
+      <span style="font-size:12px;color:var(--tx2)" id="a-ci"></span>
+    </div>
+    <div style="margin-top:8px"><div class="lbl">Start date</div><input type="date" id="a-start"></div>
+    <div style="margin-top:8px"><div class="lbl">Color</div>
+      <div style="display:flex;gap:6px" id="a-colors"></div>
+    </div>
+    <button class="btn" style="margin-top:16px" onclick="addPep()">Add to Protocol</button>
+  </div>
+</div>
+
+<nav>
+  <button class="on" onclick="go('today',this)">Today</button>
+  <button onclick="go('library',this)">Library</button>
+  <button onclick="go('settings',this)">Settings</button>
+</nav>
+
+<script>
+var KEY='stack_v5',SITES=['Abdomen L','Abdomen R','Love Handle L','Love Handle R','Thigh L','Thigh R','Glute L','Glute R'];
+var COLORS=['#2563eb','#0d9488','#d97706','#7c3aed','#db2777','#dc2626','#16a34a','#6366f1'];
+var S={days:{},protocols:[],nasal:{},bloodwork:[]};
+function load(){try{var d=localStorage.getItem(KEY);if(d){S=JSON.parse(d);if(!S.protocols)S.protocols=[];if(!S.days)S.days={};if(!S.nasal)S.nasal={};if(!S.bloodwork)S.bloodwork=[]}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function dk(d){return d.toISOString().slice(0,10)}
+function today(){return dk(new Date())}
+
+var _tt;
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.className='toast on';clearTimeout(_tt);_tt=setTimeout(function(){t.className='toast'},2200)}
+var _cr;
+function showCf(m){return new Promise(function(r){document.getElementById('cf-msg').textContent=m;document.getElementById('cfo').className='cfo on';_cr=r})}
+function cfRes(v){document.getElementById('cfo').className='cfo';if(_cr){_cr(v);_cr=null}}
+
+function go(name,btn){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
+  document.getElementById('t-'+name).classList.add('on');
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  if(name==='today')renderToday();
+  if(name==='library')renderLib();
+  if(name==='settings')renderSet();
+}
+
+// Schedule check
+function isSch(pr,d){
+  var s=new Date(pr.start+'T00:00:00'),c=new Date(dk(d)+'T00:00:00');
+  if(c<s)return false;
+  var diff=Math.floor((c-s)/86400000),f=pr.freq;
+  if(f==='daily')return true;
+  if(f==='weekdays'){var dow=d.getDay();return dow>0&&dow<6}
+  if(f==='every2')return diff%2===0;
+  if(f==='every3')return diff%3===0;
+  if(f==='every4')return diff%4===0;
+  if(f==='weekly')return diff%7===0;
+  if(f==='days')return(pr.days||[]).indexOf(d.getDay())>=0;
+  return false;
+}
+
+// Add modal
+var _sd=[],_selCol=COLORS[0];
+function openAdd(){
+  document.getElementById('a-name').value='';
+  document.getElementById('a-dose').value='';
+  document.getElementById('a-unit').value='mcg';
+  document.getElementById('a-route').value='SubQ';
+  document.getElementById('a-freq').value='daily';
+  document.getElementById('a-vial').value='';
+  document.getElementById('a-bac').value='';
+  document.getElementById('a-start').value=today();
+  document.getElementById('a-dw').style.display='none';
+  document.getElementById('a-calc').style.display='none';
+  _sd=[];_selCol=COLORS[0];
+  var dw=document.getElementById('a-days');dw.innerHTML='';
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(dn,di){
+    var b=document.createElement('button');b.className='db';b.textContent=dn;
+    b.onclick=function(){var x=_sd.indexOf(di);if(x>=0){_sd.splice(x,1);b.classList.remove('on')}else{_sd.push(di);b.classList.add('on')}};
+    dw.appendChild(b);
+  });
+  var ce=document.getElementById('a-colors');ce.innerHTML='';
+  COLORS.forEach(function(c){
+    var b=document.createElement('button');
+    b.style.cssText='width:28px;height:28px;border-radius:50%;border:3px solid '+(c===_selCol?c:'transparent')+';background:'+c+';cursor:pointer';
+    b.onclick=function(){_selCol=c;ce.querySelectorAll('button').forEach(function(x){x.style.borderColor='transparent'});b.style.borderColor=c};
+    ce.appendChild(b);
+  });
+  document.getElementById('add-modal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeAdd(){document.getElementById('add-modal').classList.remove('on');document.body.style.overflow=''}
+function aFrq(){document.getElementById('a-dw').style.display=document.getElementById('a-freq').value==='days'?'':'none'}
+function aCalc(){
+  var v=parseFloat(document.getElementById('a-vial').value),b=parseFloat(document.getElementById('a-bac').value),d=parseFloat(document.getElementById('a-dose').value),u=document.getElementById('a-unit').value;
+  if(!v||!b||!d){document.getElementById('a-calc').style.display='none';return}
+  var dm=u==='mg'?d*1000:d,cm=(v/b)*1000,ml=dm/cm,un=ml*100,ds=Math.floor((v*1000)/dm);
+  document.getElementById('a-cu').textContent=un.toFixed(1)+' units';
+  document.getElementById('a-ci').textContent=' = '+ml.toFixed(3)+'ml \u00b7 ~'+ds+' doses/vial';
+  document.getElementById('a-calc').style.display='';
+}
+function addPep(){
+  var name=document.getElementById('a-name').value.trim();
+  if(!name){toast('Enter a peptide name');return}
+  var dose=parseFloat(document.getElementById('a-dose').value);
+  if(!dose){toast('Enter a dose');return}
+  var unit=document.getElementById('a-unit').value;
+  var route=document.getElementById('a-route').value;
+  var freq=document.getElementById('a-freq').value;
+  var start=document.getElementById('a-start').value||today();
+  var vial=parseFloat(document.getElementById('a-vial').value)||0;
+  var bac=parseFloat(document.getElementById('a-bac').value)||0;
+  if(freq==='days'&&_sd.length===0){toast('Select at least one day');return}
+  var us='\u2014',ms='\u2014';
+  if(vial&&bac){var dm=unit==='mg'?dose*1000:dose,cm=(vial/bac)*1000,ml=dm/cm;us=(ml*100).toFixed(1);ms=ml.toFixed(3)}
+  // Remove existing with same name
+  S.protocols=S.protocols.filter(function(pr){return pr.name!==name});
+  S.protocols.push({name:name,col:_selCol,route:route,dose:dose,unit:unit,vialMg:vial,bacMl:bac,units:us,ml:ms,freq:freq,days:_sd.slice(),start:start});
+  if(route==='Nasal'&&vial&&bac){S.nasal[name]=Math.floor(bac/0.1)}
+  save();closeAdd();renderToday();toast('\u2713 '+name+' added');
+}
+function remPep(name){
+  showCf('Remove '+name+'?').then(function(ok){
+    if(!ok)return;
+    S.protocols=S.protocols.filter(function(pr){return pr.name!==name});
+    delete S.nasal[name];
+    save();renderToday();renderSet();toast(name+' removed');
+  });
+}
+
+// Today render
+var _tc={},_tn={},_tsites={},_sc={energy:0,sleep:0,anxiety:0};
+function renderToday(){
+  var now=new Date(),key=dk(now),sv=S.days[key]||{};
+  _tc=Object.assign({},sv.checked||{});
+  _tn=Object.assign({},sv.nasal||{});
+  _tsites=Object.assign({},sv.sites||{});
+  _sc={energy:sv.energy||0,sleep:sv.sleep||0,anxiety:sv.anxiety||0};
+  document.getElementById('t-date').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('t-notes').value=sv.notes||'';
+  document.getElementById('t-hrs').value=sv.sleepHrs||'';
+
+  var inj=[],nas=[],oral=[];
+  for(var i=0;i<S.protocols.length;i++){
+    var pr=S.protocols[i];
+    if(!isSch(pr,now))continue;
+    if(pr.route==='Nasal')nas.push(pr);
+    else if(pr.route==='Oral')oral.push(pr);
+    else inj.push(pr);
+  }
+
+  // Injections
+  var ie=document.getElementById('t-inj');
+  if(!inj.length){ie.innerHTML='<div class="empty">No injections today. Tap + to add peptides.</div>'}
+  else{
+    var siteOpts='<option value="">Site...</option>';
+    for(var k=0;k<SITES.length;k++){siteOpts+='<option>'+SITES[k]+'</option>'}
+    var h='';
+    for(var j=0;j<inj.length;j++){var pr=inj[j],done=!!_tc[pr.name];
+      h+='<div class="row" style="flex-wrap:wrap"><div class="dot" style="background:'+pr.col+'"></div><div class="grow"><div class="nm">'+pr.name+'</div><div class="dt">'+pr.dose+' '+pr.unit+' \u00b7 '+pr.route+'</div>'+(pr.units!=='\u2014'?'<div class="un">Draw to '+pr.units+' units ('+pr.ml+' ml)</div>':'')+'<select class="site-sel" data-name="'+pr.name+'" onchange="setSite(this)">'+siteOpts+'</select></div><button class="chk'+(done?' done':'')+'" data-name="'+pr.name+'" onclick="togChk(this)">'+(done?'\u2713':'')+'</button></div>'}
+    ie.innerHTML=h;
+    var sels=ie.querySelectorAll('.site-sel');
+    for(var s=0;s<sels.length;s++){var nm=sels[s].dataset.name;if(_tsites[nm])sels[s].value=_tsites[nm]}
+  }
+
+  // Nasal
+  var ne=document.getElementById('t-nas');
+  if(!nas.length){ne.innerHTML='<div class="empty">No nasal sprays today.</div>'}
+  else{var h='';for(var j=0;j<nas.length;j++){var pr=nas[j],used=_tn[pr.name]||0,rem=S.nasal[pr.name]||0;
+    var sid=pr.name.replace(/[^a-z0-9]/gi,'_');
+    h+='<div class="row"><div class="dot" style="background:'+pr.col+'"></div><div class="grow"><div class="nm">'+pr.name+'</div><div class="dt">'+pr.dose+' '+pr.unit+'/spray \u00b7 '+rem+' left'+(rem<=20?' \u26a0\ufe0f':'')+'</div></div><div class="spc"><button class="spb" data-name="'+pr.name+'" data-dir="-1" onclick="adjSp(this)">\u2212</button><span class="spn" id="sn-'+sid+'">'+used+'</span><button class="spb" data-name="'+pr.name+'" data-dir="1" onclick="adjSp(this)">+</button></div></div>'}
+    ne.innerHTML=h}
+
+  // Oral
+  var oe=document.getElementById('t-oral');
+  if(!oral.length){oe.innerHTML='<div class="empty">No oral items today.</div>'}
+  else{var h='';for(var j=0;j<oral.length;j++){var pr=oral[j],done=!!_tc[pr.name];
+    h+='<div class="row"><div class="dot" style="background:'+pr.col+'"></div><div class="grow"><div class="nm">'+pr.name+'</div><div class="dt">'+pr.dose+' '+pr.unit+'</div></div><button class="chk'+(done?' done':'')+'" data-name="'+pr.name+'" onclick="togChk(this)">'+(done?'\u2713':'')+'</button></div>'}
+    oe.innerHTML=h}
+
+  // Scores
+  ['energy','sleep','anxiety'].forEach(function(type){
+    var el=document.getElementById('t-'+type);el.innerHTML='';
+    for(var i=1;i<=5;i++){var b=document.createElement('button');b.className='sb'+(i===_sc[type]?' on':'');b.textContent=i;
+      b.onclick=(function(t,v){return function(){_sc[t]=v;var btns=this.parentNode.querySelectorAll('.sb');btns.forEach(function(x){x.classList.remove('on')});this.classList.add('on')}})(type,i);el.appendChild(b)}});
+}
+
+function togChk(btn){var name=btn.dataset.name;_tc[name]=!_tc[name];btn.classList.toggle('done',!!_tc[name]);btn.textContent=_tc[name]?'\u2713':''}
+function setSite(sel){_tsites[sel.dataset.name]=sel.value}
+function adjSp(btn){var name=btn.dataset.name,dir=parseInt(btn.dataset.dir),cur=_tn[name]||0,nv=Math.max(0,cur+dir),rem=S.nasal[name]||0;
+  S.nasal[name]=Math.max(0,rem-(nv-cur));_tn[name]=nv;
+  var sid=name.replace(/[^a-z0-9]/gi,'_'),el=document.getElementById('sn-'+sid);if(el)el.textContent=nv;save()}
+
+function saveToday(){
+  var key=today(),now=new Date();
+  var inj=S.protocols.filter(function(pr){return pr.route!=='Nasal'&&pr.route!=='Oral'&&isSch(pr,now)});
+  var oral=S.protocols.filter(function(pr){return pr.route==='Oral'&&isSch(pr,now)});
+  var tot=inj.length+oral.length,done=0;
+  inj.concat(oral).forEach(function(pr){if(_tc[pr.name])done++});
+  S.days[key]={checked:Object.assign({},_tc),nasal:Object.assign({},_tn),sites:Object.assign({},_tsites),energy:_sc.energy,sleep:_sc.sleep,anxiety:_sc.anxiety,sleepHrs:parseFloat(document.getElementById('t-hrs').value)||0,notes:document.getElementById('t-notes').value,status:tot===0?'off':done===tot?'full':done>0?'partial':'miss'};
+  save();toast('\u2713 Saved');
+}
+
+// Settings
+function renderSet(){
+  var el=document.getElementById('s-list');
+  if(!S.protocols.length){el.innerHTML='<div class="empty">No peptides added yet.</div>'}
+  else{
+    var h='';
+    for(var i=0;i<S.protocols.length;i++){var pr=S.protocols[i];
+      h+='<div class="row"><div class="dot" style="background:'+pr.col+'"></div><div class="grow"><div class="nm">'+pr.name+'</div><div class="dt">'+pr.dose+' '+pr.unit+' \u00b7 '+pr.route+' \u00b7 '+pr.freq+'</div></div><button class="bo br" style="padding:6px 12px;font-size:11px" data-name="'+pr.name+'" onclick="remPep(this.dataset.name)">Remove</button></div>'}
+    el.innerHTML=h;
+  }
+  renderBW();
+}
+
+function resetAll(){
+  showCf('Reset ALL data? Cannot be undone.').then(function(ok){
+    if(!ok)return;var bw=S.bloodwork;S={days:{},protocols:[],nasal:{},bloodwork:bw};save();renderToday();renderSet();toast('All data reset')});
+}
+
+
+// ── Library Data ──
+var LIB=[
+{n:'BPC-157',t:['recovery'],c:'#0d9488',r:'SubQ',u:'Gut healing, tendon/ligament repair, anti-inflammatory',d:'200-500 mcg/day',f:'Daily',cy:'4-12 weeks',rc:'5mg + 5ml BAC = 1mg/ml',nt:'Oral arginate form for gut. Injectable for systemic repair.'},
+{n:'TB-500',t:['recovery','muscle'],c:'#0d9488',r:'SubQ',u:'Systemic healing, connective tissue, mobility',d:'2-2.5mg 2x/wk loading, 1-2mg/wk maint',f:'2x/wk then weekly',cy:'4-6 wk load + ongoing',rc:'5mg + 5ml BAC = 1mg/ml',nt:'Works systemically. Best stacked with BPC-157.'},
+{n:'BPC-157 + TB-500',t:['recovery'],c:'#0d9488',r:'SubQ',u:'Combined healing \u2014 tendon, ligament, gut, connective tissue',d:'500mcg/inj (250mcg each)',f:'Mon/Thu load wk1-6, Mon maint',cy:'6 wk load + ongoing',rc:'10mg + 10ml BAC = 1mg/ml \u00b7 50 units \u00b7 20 doses/vial',nt:'Combined vial. Clean 50-unit draws.'},
+{n:'CJC-1295 (no DAC)',t:['muscle','fat','antiaging'],c:'#2563eb',r:'SubQ',u:'GH pulse, muscle, fat loss, recovery, sleep',d:'100-200mcg/inj',f:'Daily or weekdays, bedtime fasted',cy:'12-16 wk on, 4-8 off',rc:'2mg + 2ml BAC = 1mg/ml',nt:'Stack with GHRP like Ipamorelin. Fasted maximizes GH pulse.'},
+{n:'CJC-1295 + Ipamorelin',t:['muscle','fat','antiaging'],c:'#2563eb',r:'SubQ',u:'Combined GHRH+GHRP for synergistic GH pulse',d:'100-200mcg each/inj',f:'Weekdays bedtime fasted',cy:'12-16 wk on, 4-8 off',rc:'10mg combined + 3ml BAC = 3.33mg/ml \u00b7 9-12 units',nt:'Titrate 9 units (wk1-2) to 12 units (wk3+).'},
+{n:'Ipamorelin',t:['muscle','fat','antiaging'],c:'#2563eb',r:'SubQ',u:'Clean GH pulse, minimal cortisol/prolactin side effects',d:'200-300mcg/inj',f:'1-3x daily, bedtime fasted',cy:'12-16 wk on, 4 off',rc:'5mg + 2ml BAC = 2.5mg/ml \u00b7 8-12 units',nt:'Cleanest GHRP. Pairs with CJC-1295 or Tesamorelin.'},
+{n:'Tesamorelin',t:['fat','antiaging'],c:'#d97706',r:'SubQ',u:'Visceral fat reduction (FDA approved), GH stimulation',d:'1-2mg/day bedtime fasted + Ipamorelin',f:'Daily bedtime',cy:'3-6 months',rc:'20mg + 10ml BAC = 2mg/ml \u00b7 1mg=50u \u00b7 2mg=100u \u00b7 20 doses at 1mg',nt:'Stronger than CJC for visceral fat. Pair with Ipamorelin. Monitor IGF-1 at 6 wks.'},
+{n:'Retatrutide',t:['fat'],c:'#d97706',r:'SubQ',u:'Visceral fat loss (triple GLP-1/GIP/glucagon agonist)',d:'Titrate in 1mg steps (e.g. 1-2-3-4mg) every 2-4 weeks per tolerance',f:'Every 4 days',cy:'Ongoing',rc:'30mg + 3ml BAC = 10mg/ml \u00b7 dose in mg \u00d7 10 = units to draw',nt:'Most potent fat loss peptide. Titrate slowly for GI tolerance \u2014 larger jumps between doses increase risk of nausea, appetite rebound, and GI side effects. Track appetite and side effects closely at each new dose; unexpected changes (like increased hunger at a higher dose) are worth flagging to whoever is monitoring the protocol.'},
+{n:'Semaglutide',t:['fat'],c:'#d97706',r:'SubQ',u:'Weight loss, appetite suppression (GLP-1)',d:'0.25mg/wk start, titrate to 1-2.4mg/wk',f:'Weekly',cy:'Ongoing',rc:'3mg + 3ml BAC = 1mg/ml',nt:'Titrate slowly. Nausea common at higher doses.'},
+{n:'MOTS-c',t:['fat','antiaging'],c:'#2563eb',r:'SubQ',u:'Mitochondrial function, insulin sensitivity, fat oxidation',d:'5-10mg 2-3x/wk',f:'2-3x/wk morning',cy:'4-8 wk on, 2-4 off',rc:'10mg + 2ml BAC = 5mg/ml',nt:'SubQ only \u2014 too large (21 AA) for nasal.'},
+{n:'Epithalon',t:['antiaging'],c:'#db2777',r:'SubQ',u:'Telomere elongation, anti-aging, sleep quality, GH support',d:'5-10mg/day for 10-day cycle',f:'Daily for 10-20 days',cy:'10-20 days on, 2-4 months off',rc:'50mg + 5ml BAC = 10mg/ml \u00b7 5mg=50 units \u00b7 10 doses/vial',nt:'Reconstituted lasts 4-6 wks fridge, 3-6 months frozen. Draw into syringes and freeze.'},
+{n:'Selank',t:['cognitive'],c:'#7c3aed',r:'Nasal',u:'Anxiety reduction, stress relief, calm focus, HPA axis regulation',d:'200-400mcg/nostril',f:'Daily morning',cy:'No strict cycle',rc:'5mg + 1.25ml BAC = 4mg/ml \u00b7 400mcg/spray',nt:'Best within 30-45min of waking to blunt cortisol awakening response. Non-habit forming. GABA-A modulation.'},
+{n:'Semax',t:['cognitive'],c:'#db2777',r:'Nasal',u:'Cognitive enhancement, focus, BDNF, neuroprotection',d:'200-600mcg/nostril 1-2x/day',f:'As needed or daily',cy:'2-4 wk on, 1-2 off',rc:'5mg + 1.25ml BAC = 4mg/ml',nt:'Stimulating \u2014 avoid evening. Pairs well with Selank.'},
+{n:'KPV',t:['recovery'],c:'#0d9488',r:'Oral',u:'Gut inflammation, IBD, leaky gut, gut-brain axis anxiety support',d:'500mcg 1x/day, increase to 2x/day after wk 3',f:'Daily morning fasted',cy:'4-8 wk on, 2-4 off',rc:'Pre-made capsules (arginate salt), no reconstitution',nt:'Arginate salt survives digestion. Pairs with BPC-157 for gut and Selank for anxiety. Effects: gut wk1-2, mood wk2-8.'},
+{n:'GHK-Cu',t:['antiaging','recovery'],c:'#d97706',r:'SubQ',u:'Skin regeneration, wound healing, hair growth, collagen synthesis',d:'200-500mcg/day SubQ',f:'Daily',cy:'4-8 weeks',rc:'5mg + 5ml BAC = 1mg/ml',nt:'Can turn skin blue at very high doses \u2014 stay in range.'},
+{n:'AOD-9604',t:['fat'],c:'#d97706',r:'SubQ',u:'Fat burning, lipolysis without GH side effects',d:'250-500mcg/day fasted morning',f:'Daily fasted',cy:'12 wk on, 4 off',rc:'5mg + 2ml BAC = 2.5mg/ml',nt:'GH fragment (176-191). Targets fat cells. Does not raise IGF-1.'},
+{n:'PT-141',t:['cognitive'],c:'#dc2626',r:'SubQ',u:'Sexual function, libido enhancement (men and women)',d:'0.5-2mg 30-60min before activity',f:'As needed, max 1x/72hrs',cy:'As needed',rc:'10mg + 5ml BAC = 2mg/ml',nt:'FDA approved (Vyleesi). Can cause nausea/flushing. Start 0.5mg.'},
+{n:'DSIP',t:['cognitive','recovery'],c:'#7c3aed',r:'SubQ',u:'Sleep quality, stress reduction, nocturnal cortisol suppression',d:'100-300mcg before bed',f:'Nightly or as needed',cy:'2-4 wk on, 2 off',rc:'5mg + 5ml BAC = 1mg/ml',nt:'Non-habit forming sleep peptide. Stacks with CJC+Ipa or Tesamorelin at bedtime.'},
+{n:'Sermorelin',t:['muscle','fat','antiaging'],c:'#2563eb',r:'SubQ',u:'GH stimulation, anti-aging, body composition, sleep',d:'200-500mcg/day bedtime fasted',f:'Daily bedtime',cy:'3-6 months',rc:'6mg + 6ml BAC = 1mg/ml',nt:'First GHRH analog. Gentler than CJC-1295. Good starter GH peptide.'},
+{n:'Hexarelin',t:['muscle','antiaging'],c:'#2563eb',r:'SubQ',u:'Strongest GHRP, powerful GH release, cardioprotection',d:'100-200mcg/inj',f:'1-3x daily fasted',cy:'8-12 wk on, 4 off',rc:'2mg + 2ml BAC = 1mg/ml',nt:'Desensitization risk \u2014 shorter cycles than Ipamorelin.'},
+{n:'FLGR242 (Follistatin)',t:['muscle'],c:'#2563eb',r:'SubQ',u:'Myostatin inhibition, muscle hypertrophy, lean mass, tissue repair, body recomposition',d:'100-200mcg SubQ 1x/week',f:'Once weekly',cy:'12-16 weeks',rc:'5mg + 1ml BAC = 5mg/ml \u00b7 100mcg = 2 units',nt:'Modified Follistatin-344 fused with albumin-binding construct extending half-life from 1-2 hours to ~19 days. Blocks myostatin without binding activin (avoids unwanted cellular growth). Very early stage \u2014 limited human clinical data, mostly biohacker reports. Expected: 0.5-1 lb skeletal muscle/week over 12-16 weeks with proper training and nutrition. Expensive. Interaction with GH peptides (CJC/Tesamorelin) is unstudied.'},
+{n:'NR (Nicotinamide Riboside)',t:['antiaging','cognitive','supplement'],c:'#d97706',r:'Oral',u:'NAD+ precursor \u2014 cellular energy, anti-aging, mitochondrial health',d:'300-1000mg/day',f:'Daily morning',cy:'Ongoing',rc:'Oral capsule, no reconstitution',nt:'\u26a0\ufe0f MUST TAKE WITH TMG: NR depletes methyl groups causing elevated homocysteine, anxiety, brain fog, fatigue. TMG 500-1000mg daily prevents this. Do not take NR above 300mg without TMG.'},
+{n:'NMN',t:['antiaging','cognitive','fat','supplement'],c:'#d97706',r:'Oral',u:'NAD+ precursor \u2014 energy, fat metabolism, anti-aging, insulin sensitivity',d:'500-1000mg/day morning fasted',f:'Daily morning',cy:'Ongoing',rc:'Oral capsule or sublingual, no reconstitution',nt:'\u26a0\ufe0f MUST TAKE WITH TMG: methyl depletion at therapeutic doses causes elevated homocysteine, anxiety, brain fog. TMG is not optional \u2014 it is essential.'},
+{n:'TMG (Trimethylglycine)',t:['antiaging','cognitive','supplement'],c:'#0d9488',r:'Oral',u:'Methyl donor \u2014 essential companion to NAD+ precursors, homocysteine regulation',d:'500-1000mg/day with NR or NMN',f:'Daily with NR/NMN',cy:'Ongoing',rc:'Oral capsule or powder, no reconstitution',nt:'Prevents methyl depletion from NAD+ conversion. Also independently lowers homocysteine and supports liver. Do not take NR/NMN without TMG.'},
+{n:'Resveratrol',t:['antiaging','supplement'],c:'#7c3aed',r:'Oral',u:'Sirtuin activation, anti-aging synergy with NAD+ precursors, cardiovascular',d:'250-500mg/day with fat-containing meal',f:'Daily with meal containing fat',cy:'Ongoing',rc:'Oral capsule, no reconstitution. Must take with fat for absorption.',nt:'Activates the sirtuins that NAD+ powers. Significantly more effective combined with NR/NMN than either alone. Take with fatty food \u2014 poor absorption without fat.'},
+{n:'Vitamin D3+K2',t:['supplement'],c:'#d97706',r:'Oral',u:'Bone health, immune function, hormone support, calcium metabolism',d:'5000 IU D3 + 100-200mcg K2 (MK-7)',f:'Daily with fat-containing meal',cy:'Ongoing',rc:'Oral capsule or drops, no reconstitution',nt:'K2 directs calcium to bones instead of arteries. Test 25-OH vitamin D levels \u2014 target 60-80 ng/mL. Most people are deficient.'},
+{n:'Magnesium Glycinate',t:['supplement','recovery'],c:'#0d9488',r:'Oral',u:'Sleep quality, muscle recovery, stress reduction, 300+ enzyme reactions',d:'200-400mg elemental Mg before bed',f:'Daily evening',cy:'Ongoing',rc:'Oral capsule or powder, no reconstitution',nt:'Glycinate form is best absorbed and least likely to cause GI issues. Most adults are deficient. Supports GABA for sleep and anxiety.'},
+{n:'Omega-3 Fish Oil',t:['supplement','recovery'],c:'#2563eb',r:'Oral',u:'Anti-inflammatory, cardiovascular, brain health, joint support',d:'2-4g combined EPA+DHA daily',f:'Daily with meals',cy:'Ongoing',rc:'Oral softgel or liquid, no reconstitution',nt:'Look for high EPA+DHA content per serving, not total fish oil. IFOS certified for purity. Triglyceride form absorbs better than ethyl ester.'},
+{n:'Quercetin',t:['supplement','recovery','antiaging'],c:'#d97706',r:'Oral',u:'Natural xanthine oxidase inhibitor \u2014 lowers uric acid, anti-inflammatory, senolytic, anti-aging',d:'500-1000mg/day',f:'Daily morning with NR/TMG',cy:'Ongoing',rc:'Oral capsule, no reconstitution. Take with fat for better absorption.',nt:'Same mechanism as allopurinol (xanthine oxidase inhibition) but milder and over-the-counter. Lowers uric acid production. Also a potent senolytic (clears senescent cells) when paired with Dasatinib in research. Commonly stacked with Resveratrol + NR/NMN for longevity. Anti-inflammatory and antioxidant. Helps with gout prevention alongside GLP-1 agonists like Retatrutide.'},
+{n:'SS-31 (Elamipretide)',t:['antiaging','recovery'],c:'#2563eb',r:'SubQ',u:'Mitochondrial membrane repair, cellular energy restoration, anti-aging, neuroprotection',d:'1-5mg/day SubQ',f:'Daily or 5x/week',cy:'4-8 weeks on, 2-4 off',rc:'5mg + 1ml BAC = 5mg/ml \u00b7 1mg = 20 units \u00b7 5mg = 100 units',nt:'Synthetic tetrapeptide (4 AA) that penetrates and accumulates 1000-5000x at the inner mitochondrial membrane. Binds cardiolipin to restore membrane structure and ATP production. Reduces oxidative stress and ROS damage. Crosses blood-brain barrier. Active clinical trials for cardiomyopathy, heart failure, kidney disease, neurodegeneration. Strong complement to NR+TMG (NAD+ fuels mitochondria, SS-31 repairs the machinery) and MOTS-c (activates metabolic pathways). Most clinically advanced mitochondrial peptide available.'},
+{n:'Pinealon (EDR)',t:['antiaging','cognitive'],c:'#7c3aed',r:'SubQ',u:'Neuroprotection, cognitive function, circadian rhythm regulation, melatonin synthesis support',d:'1mg/day SubQ',f:'Daily for 10 days',cy:'10 days on, 3-4 months off \u00b7 2-3 cycles/year',rc:'10mg + 1ml BAC = 10mg/ml \u00b7 1mg = 10 units \u00b7 10 doses/vial = exactly 1 cycle',nt:'Khavinson tripeptide bioregulator (Glu-Asp-Arg / EDR). NOT the same as Epithalon (AEDG) \u2014 different sequence, different target. Pinealon targets brain neurons and CNS; Epithalon targets pineal gland. Run both simultaneously for synergy: Epithalon activates the pineal gland, Pinealon optimizes the neurons it communicates with. Inject 90 min before bed to align with endogenous melatonin peak. Interacts with calmodulin for neurotransmitter regulation. Supports ERK1/2 signaling for memory and neuroplasticity. 10mg vial = exactly 1 ten-day cycle at 1mg/day. Potency degrades ~8-12%/week at room temp \u2014 keep refrigerated, use within 28 days.'},
+{n:'Resistant Starch',t:['supplement','fat'],c:'#0d9488',r:'Oral',u:'Gut microbiome support, insulin sensitivity, satiety, butyrate production',d:'Start 1 tsp/day, ramp to 2-4 tbsp (15-30g)/day over 2-4 weeks',f:'Daily with meals \u2014 best with lunch for post-meal blood sugar support',cy:'Ongoing once at target dose',rc:'Oral powder (raw potato starch or green banana flour). Mix into COLD liquid \u2014 heat destroys the resistant starch structure. No reconstitution.',nt:'Ferments in colon to produce butyrate (feeds colon cells, anti-inflammatory, supports gut barrier). Consistently shows improved insulin sensitivity in research, including a "second meal effect" on the following meal hours later \u2014 relevant given HOMA-IR 2.4. Satiety effect may help smooth Retatrutide-related appetite swings. \u26a0\ufe0f MUST ramp up slowly \u2014 starting at full dose causes significant gas/bloating. Do not start alongside other new GI-active changes (dose changes, new gut-targeted peptides) so any GI symptoms can be attributed correctly.'},
+{n:'SLU-PP-332',t:['fat','antiaging'],c:'#d97706',r:'Oral',u:'Exercise mimetic \u2014 mitochondrial biogenesis, fat oxidation, endurance, insulin sensitivity',d:'50mg oral tablet daily or 5mg injectable',f:'Daily, no cycling needed',cy:'Ongoing \u2014 no cycle required',rc:'Oral: 50mg tablets, no reconstitution. Injectable: 5mg + 1ml BAC = 5mg/ml',nt:'NOT a peptide \u2014 small organic molecule (benzohydrazide scaffold) sold in peptide space. Pan-agonist of estrogen-related receptors (ERR\u03b1/\u03b2/\u03b3). Mimics gene expression changes of aerobic exercise. Increases mitochondrial biogenesis and fatty acid oxidation. Non-hormonal, does not suppress any endogenous hormone. \u26a0\ufe0f CAUTION: All evidence is preclinical (mouse studies only). No human clinical trials exist as of 2026. Higher risk than established peptides. Different mechanism than Retatrutide (nuclear receptor vs GLP-1).'},
+];
+
+// Library rendering
+var _ltag='all';
+function lf(tag,btn){_ltag=tag;document.querySelectorAll('#t-library .chip').forEach(function(c){c.classList.remove('on')});btn.classList.add('on');renderLib()}
+function renderLib(){
+  var q=(document.getElementById('lib-q').value||'').toLowerCase();
+  var list=[];
+  for(var i=0;i<LIB.length;i++){
+    var p=LIB[i];
+    if(_ltag!=='all'&&p.t.indexOf(_ltag)<0)continue;
+    if(q&&p.n.toLowerCase().indexOf(q)<0&&p.u.toLowerCase().indexOf(q)<0)continue;
+    list.push({p:p,i:i});
+  }
+  var el=document.getElementById('lib-list');
+  if(!list.length){el.innerHTML='<div class="empty">No peptides found.</div>';return}
+  var h='';
+  for(var j=0;j<list.length;j++){
+    var p=list[j].p,idx=list[j].i;
+    var active=false;
+    for(var k=0;k<S.protocols.length;k++){if(S.protocols[k].name===p.n){active=true;break}}
+    h+='<div class="lc"><div class="lh" onclick="togLib('+idx+')">';
+    h+='<div style="display:flex;align-items:center;gap:8px"><div class="dot" style="background:'+p.c+'"></div><div><div style="font-size:13px;font-weight:600">'+p.n+'</div><div style="font-size:11px;color:var(--tx3)">'+p.t.join(' \u00b7 ')+' \u00b7 '+p.r+'</div></div></div>';
+    h+='<div style="display:flex;align-items:center;gap:6px">'+(active?'<span class="badge">Active</span>':'')+'<span style="color:var(--tx3)" id="la-'+idx+'">&#8250;</span></div>';
+    h+='</div><div class="lb" id="lb-'+idx+'">';
+    h+='<div class="lf"><div class="ll">Primary use</div>'+p.u+'</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bdr)">';
+    h+='<div class="lf"><div class="ll">Dose</div>'+p.d+'</div>';
+    h+='<div class="lf"><div class="ll">Frequency</div>'+p.f+'</div></div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--bdr)">';
+    h+='<div class="lf"><div class="ll">Cycle</div>'+p.cy+'</div>';
+    h+='<div class="lf"><div class="ll">Route</div>'+p.r+'</div></div>';
+    h+='<div class="lf" style="border-top:1px solid var(--bdr)"><div class="ll">Reconstitution</div><span style="color:var(--prp);font-family:var(--mono);font-size:11px">'+p.rc+'</span></div>';
+    h+='<div class="lf" style="background:var(--bg)"><div class="ll">Notes</div><span style="color:var(--tx2)">'+p.nt+'</span></div>';
+    h+='<div style="padding:12px 14px">';
+    if(active){h+='<button class="bo br" style="width:100%" data-idx="'+idx+'" onclick="remFromLib('+idx+')">Remove from Protocol</button>'}
+    else{h+='<button class="btn" data-idx="'+idx+'" onclick="addFromLib('+idx+')">+ Add to My Protocol</button>'}
+    h+='</div></div></div>';
+  }
+  el.innerHTML=h;
+  renderInv();
+}
+function togLib(i){var b=document.getElementById('lb-'+i),a=document.getElementById('la-'+i);if(!b)return;var o=b.classList.contains('open');b.classList.toggle('open',!o);if(a)a.innerHTML=o?'&#8250;':'&#8964;'}
+function addFromLib(idx){
+  var p=LIB[idx];if(!p)return;
+  openAdd();
+  document.getElementById('a-name').value=p.n;
+  var rt=p.r.split('\u00b7')[0].trim();
+  document.getElementById('a-route').value=rt==='Nasal'?'Nasal':rt==='Oral'?'Oral':rt==='IM'?'IM':'SubQ';
+}
+function remFromLib(idx){
+  var p=LIB[idx];if(!p)return;
+  remPep(p.n);
+}
+
+// Recon calculator
+function rcCalc(){
+  var v=parseFloat(document.getElementById('rc-v').value),b=parseFloat(document.getElementById('rc-b').value),d=parseFloat(document.getElementById('rc-d').value),u=document.getElementById('rc-u').value;
+  if(!v||!b||!d){document.getElementById('rc-out').style.display='none';return}
+  var dm=u==='mg'?d*1000:d,cm=(v/b)*1000,ml=dm/cm,un=ml*100,ds=Math.floor((v*1000)/dm);
+  document.getElementById('rc-units').textContent=un.toFixed(1);
+  document.getElementById('rc-info').textContent=ml.toFixed(3)+' ml \u00b7 ~'+ds+' doses/vial \u00b7 '+(v/b).toFixed(3)+' mg/ml';
+  document.getElementById('rc-out').style.display='';
+}
+
+// Inventory
+function renderInv(){
+  var el=document.getElementById('inv-list');if(!el)return;
+  var items=S.protocols.filter(function(pr){return pr.vialMg&&pr.bacMl});
+  if(!items.length){el.innerHTML='<div class="empty">Add peptides with vial info to see inventory.</div>';return}
+  var h='';
+  for(var i=0;i<items.length;i++){
+    var pr=items[i];
+    var dmcg=pr.unit==='mg'?pr.dose*1000:pr.dose;
+    var totalMcg=pr.vialMg*1000;
+    var dosesPerVial=Math.floor(totalMcg/dmcg);
+    var concMgMl=(pr.vialMg/pr.bacMl).toFixed(3);
+    // Doses per week
+    var dpw=7;
+    if(pr.freq==='weekdays')dpw=5;
+    else if(pr.freq==='every2')dpw=3.5;
+    else if(pr.freq==='every3')dpw=7/3;
+    else if(pr.freq==='every4')dpw=7/4;
+    else if(pr.freq==='weekly')dpw=1;
+    else if(pr.freq==='days')dpw=(pr.days||[]).length;
+    var weeksLasts=dosesPerVial/dpw;
+    var daysLasts=Math.round(weeksLasts*7);
+    // Estimate doses used since start
+    var startD=new Date(pr.start+'T00:00:00');
+    var now=new Date();
+    var daysSinceStart=Math.max(0,Math.floor((now-startD)/86400000));
+    var dosesUsed=Math.min(dosesPerVial,Math.round(daysSinceStart*(dpw/7)));
+    var dosesLeft=Math.max(0,dosesPerVial-dosesUsed);
+    var pctLeft=Math.round((dosesLeft/dosesPerVial)*100);
+    // Run-out date
+    var runOut=new Date(startD);
+    runOut.setDate(runOut.getDate()+daysLasts);
+    var runOutStr=runOut.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    var isLow=pctLeft<=20;
+    var barCol=isLow?'var(--red)':pctLeft<=50?'var(--amb)':'var(--grn)';
+    // For nasal, show sprays remaining
+    var isNasal=pr.route==='Nasal';
+    var nasalLeft=isNasal?(S.nasal[pr.name]||0):0;
+
+    h+='<div class="inv-card">';
+    h+='<div class="inv-hdr"><div class="dot" style="background:'+pr.col+'"></div><div class="nm" style="font-size:13px">'+pr.name+'</div>'+(isLow?'<span style="font-size:11px;color:var(--red);font-weight:600">\u26a0\ufe0f Low</span>':'')+'</div>';
+    h+='<div class="inv-stats">';
+    h+='<div class="inv-stat"><div class="inv-val">'+concMgMl+'</div><div class="inv-lbl">mg/ml</div></div>';
+    if(isNasal){
+      h+='<div class="inv-stat"><div class="inv-val">'+nasalLeft+'</div><div class="inv-lbl">Sprays left</div></div>';
+    }else{
+      h+='<div class="inv-stat"><div class="inv-val">'+dosesLeft+'/'+dosesPerVial+'</div><div class="inv-lbl">Doses left</div></div>';
+    }
+    h+='<div class="inv-stat"><div class="inv-val">'+runOutStr+'</div><div class="inv-lbl">Runs out</div></div>';
+    h+='</div>';
+    h+='<div class="inv-bar"><div class="inv-fill" style="width:'+pctLeft+'%;background:'+barCol+'"></div></div>';
+    h+='</div>';
+  }
+  el.innerHTML=h;
+}
+
+// Bloodwork
+var BASELINE_LABS = {date:'2026-06-11',label:'Life Extension Elite Panel',results:[
+  {cat:'Metabolic',items:[
+    {n:'Glucose',v:90,u:'mg/dL',lo:65,hi:99},
+    {n:'BUN',v:20,u:'mg/dL',lo:7,hi:25},
+    {n:'Creatinine',v:0.92,u:'mg/dL',lo:0.7,hi:1.3},
+    {n:'eGFR',v:99,u:'mL/min',lo:60,hi:999},
+    {n:'Sodium',v:142,u:'mmol/L',lo:135,hi:146},
+    {n:'Potassium',v:3.9,u:'mmol/L',lo:3.5,hi:5.3},
+    {n:'Calcium',v:9.4,u:'mg/dL',lo:8.6,hi:10.3},
+    {n:'Protein Total',v:6.5,u:'g/dL',lo:6.1,hi:8.1},
+    {n:'Albumin',v:4.6,u:'g/dL',lo:3.6,hi:5.1},
+    {n:'Bilirubin Total',v:0.5,u:'mg/dL',lo:0.2,hi:1.2},
+    {n:'Alk Phos',v:50,u:'U/L',lo:35,hi:144},
+    {n:'AST',v:16,u:'U/L',lo:10,hi:35},
+    {n:'ALT',v:24,u:'U/L',lo:9,hi:46},
+    {n:'Uric Acid',v:6.0,u:'mg/dL',lo:4.0,hi:8.0},
+    {n:'GGT',v:18,u:'U/L',lo:3,hi:95},
+    {n:'LD',v:111,u:'U/L',lo:120,hi:250},
+  ]},
+  {cat:'Diabetes / Insulin',items:[
+    {n:'HbA1c',v:5.0,u:'%',lo:0,hi:5.7},
+    {n:'Insulin',v:11.0,u:'uIU/mL',lo:0,hi:18.4},
+    {n:'HOMA-IR (calc)',v:2.4,u:'',lo:0,hi:1.5},
+  ]},
+  {cat:'Lipids',items:[
+    {n:'Cholesterol Total',v:151,u:'mg/dL',lo:0,hi:200},
+    {n:'HDL',v:41,u:'mg/dL',lo:40,hi:999},
+    {n:'LDL',v:87,u:'mg/dL',lo:0,hi:100},
+    {n:'Triglycerides',v:132,u:'mg/dL',lo:0,hi:150},
+    {n:'ApoB',v:81,u:'mg/dL',lo:0,hi:90},
+    {n:'Chol/HDL Ratio',v:3.7,u:'',lo:0,hi:5.0},
+    {n:'Non-HDL',v:110,u:'mg/dL',lo:0,hi:130},
+  ]},
+  {cat:'Inflammation / Methylation',items:[
+    {n:'hs-CRP',v:0.2,u:'mg/L',lo:0,hi:1.0},
+    {n:'Homocysteine',v:8.2,u:'umol/L',lo:0,hi:10},
+  ]},
+  {cat:'Iron',items:[
+    {n:'Iron Total',v:66,u:'mcg/dL',lo:50,hi:180},
+    {n:'TIBC',v:372,u:'mcg/dL',lo:250,hi:425},
+    {n:'% Saturation',v:18,u:'%',lo:20,hi:48},
+    {n:'Ferritin',v:228,u:'ng/mL',lo:38,hi:380},
+  ]},
+  {cat:'Vitamins / Minerals',items:[
+    {n:'Vitamin D 25-OH',v:36,u:'ng/mL',lo:30,hi:100},
+    {n:'Magnesium',v:2.3,u:'mg/dL',lo:1.5,hi:2.5},
+    {n:'Phosphate',v:3.4,u:'mg/dL',lo:2.5,hi:4.5},
+  ]},
+  {cat:'Hormones',items:[
+    {n:'Testosterone Total',v:711,u:'ng/dL',lo:250,hi:1100},
+    {n:'Testosterone Free',v:92.8,u:'pg/mL',lo:35,hi:155},
+    {n:'SHBG',v:74,u:'nmol/L',lo:10,hi:50},
+    {n:'Estradiol',v:22,u:'pg/mL',lo:0,hi:29},
+    {n:'Estrogens Total',v:116,u:'pg/mL',lo:0,hi:404},
+    {n:'DHEA-S',v:115,u:'mcg/dL',lo:32,hi:279},
+    {n:'DHT',v:59,u:'ng/dL',lo:12,hi:65},
+    {n:'Pregnenolone',v:88,u:'ng/dL',lo:22,hi:237},
+    {n:'FSH',v:5.7,u:'mIU/mL',lo:1.4,hi:12.8},
+    {n:'LH',v:3.8,u:'mIU/mL',lo:1.5,hi:9.3},
+    {n:'Progesterone',v:0.1,u:'ng/mL',lo:0,hi:0.2},
+  ]},
+  {cat:'Thyroid',items:[
+    {n:'TSH',v:0.61,u:'mIU/L',lo:0.4,hi:4.5},
+    {n:'T4 Free',v:1.3,u:'ng/dL',lo:0.8,hi:1.8},
+    {n:'T3 Free',v:3.4,u:'pg/mL',lo:2.3,hi:4.2},
+    {n:'T3 Reverse',v:15,u:'ng/dL',lo:8,hi:25},
+  ]},
+  {cat:'Growth / Stress',items:[
+    {n:'IGF-1',v:175,u:'ng/mL',lo:50,hi:317},
+    {n:'Cortisol AM',v:17.6,u:'mcg/dL',lo:4.0,hi:22.0},
+  ]},
+  {cat:'Prostate',items:[
+    {n:'PSA Total',v:1.0,u:'ng/mL',lo:0,hi:4.0},
+    {n:'PSA % Free',v:30,u:'%',lo:25,hi:100},
+  ]},
+  {cat:'CBC',items:[
+    {n:'WBC',v:7.0,u:'K/uL',lo:3.8,hi:10.8},
+    {n:'RBC',v:5.32,u:'M/uL',lo:4.2,hi:5.8},
+    {n:'Hemoglobin',v:16.1,u:'g/dL',lo:13.2,hi:17.1},
+    {n:'Hematocrit',v:48.4,u:'%',lo:39.4,hi:51.1},
+    {n:'Platelets',v:251,u:'K/uL',lo:140,hi:400},
+  ]},
+]};
+
+var RYTHM_LABS = {date:'2026-08-06',label:'Rythm Health Panel',results:[
+  {cat:'Lipids',items:[
+    {n:'Total Cholesterol',v:168,u:'mg/dL',lo:0,hi:200},
+    {n:'HDL',v:50.0,u:'mg/dL',lo:40,hi:999},
+    {n:'LDL',v:88,u:'mg/dL',lo:0,hi:100},
+    {n:'ApoB',v:89.5,u:'mg/dL',lo:0,hi:90},
+    {n:'Triglycerides',v:150,u:'mg/dL',lo:0,hi:150},
+    {n:'Trig/HDL Ratio',v:3.0,u:'',lo:0,hi:2.0},
+    {n:'Total Chol/HDL Ratio',v:3.36,u:'',lo:0,hi:5.0},
+    {n:'LDL/ApoB Ratio',v:0.98,u:'',lo:1.2,hi:1.6},
+    {n:'Remnant Cholesterol',v:30,u:'mg/dL',lo:0,hi:20},
+  ]},
+  {cat:'Inflammation',items:[
+    {n:'hs-CRP',v:0.5,u:'mg/L',lo:0,hi:1.0},
+  ]},
+  {cat:'Metabolic',items:[
+    {n:'Fructosamine',v:210,u:'umol/L',lo:170,hi:270},
+    {n:'Uric Acid',v:5.05,u:'mg/dL',lo:4.0,hi:8.0},
+    {n:'Creatinine',v:0.920,u:'mg/dL',lo:0.7,hi:1.3},
+    {n:'eGFR',v:98.85,u:'mL/min',lo:60,hi:999},
+    {n:'Albumin',v:4.70,u:'g/dL',lo:3.6,hi:5.1},
+    {n:'Alk Phosphatase',v:52.4,u:'U/L',lo:35,hi:144},
+    {n:'GGT',v:17.8,u:'U/L',lo:3,hi:95},
+  ]},
+  {cat:'Vitamins / Iron',items:[
+    {n:'Vitamin D',v:39.0,u:'ng/mL',lo:30,hi:100},
+    {n:'Vitamin B12',v:1044,u:'pg/mL',lo:200,hi:1100},
+    {n:'Ferritin',v:329,u:'ng/mL',lo:38,hi:380},
+  ]},
+  {cat:'Thyroid',items:[
+    {n:'TSH',v:0.856,u:'uIU/mL',lo:0.4,hi:4.5},
+    {n:'Free T3',v:3.17,u:'pg/mL',lo:2.3,hi:4.2},
+  ]},
+  {cat:'Hormones',items:[
+    {n:'Estrogen',v:23.8,u:'pg/mL',lo:0,hi:29},
+  ]},
+]};
+
+function renderBW(){
+  var el=document.getElementById('bw-display');if(!el)return;
+  if(!S.bloodwork||!S.bloodwork.length){
+    S.bloodwork=[RYTHM_LABS,BASELINE_LABS];save();
+  }
+  // Migrate: if only baseline exists, add Rythm panel
+  if(S.bloodwork.length===1&&S.bloodwork[0].date==='2026-06-11'){
+    S.bloodwork=[RYTHM_LABS,BASELINE_LABS];save();
+  }
+  var h='';
+  for(var b=0;b<S.bloodwork.length;b++){
+    var panel=S.bloodwork[b];
+    h+='<div class="bw-date-hdr">\u{1F4CB} '+panel.label+' \u00b7 '+panel.date+'</div>';
+    for(var c=0;c<panel.results.length;c++){
+      var cat=panel.results[c];
+      h+='<div class="bw-cat">'+cat.cat+'</div>';
+      for(var i=0;i<cat.items.length;i++){
+        var m=cat.items[i];
+        var flag='bw-ok',sym='\u2713';
+        if(m.v<m.lo){flag='bw-lo';sym='\u2193'}
+        else if(m.v>m.hi){flag='bw-hi';sym='\u2191'}
+        h+='<div class="bw-row"><span>'+m.n+'</span><span class="bw-val '+flag+'">'+m.v+'</span><span class="bw-ref">'+m.lo+'-'+m.hi+' '+m.u+'</span><span class="'+flag+'" style="font-weight:700;text-align:center">'+sym+'</span></div>';
+      }
+    }
+  }
+  el.innerHTML=h;
+}
+
+load();renderToday();
+</script>
+</body>
+</html>
