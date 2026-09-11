@@ -545,6 +545,23 @@ const FOUNDER_LAB_PRELOAD = { date:"2026-06-11", provider:"Life Extension / Ques
   cortisol_am:17.6, tsh:0.61, ft4:1.3, ft3:3.4, rt3:15, progesterone:0.1
 }};
 
+const RYTHM_LAB_PRELOAD2 = { date:"2026-09-06", provider:"Rythm Health", values:{
+  shbg:63.2, total_t:508, free_t:64.04, cortisol_am:8.99, e2:25.4,
+  albumin:5.10, trig:115, trig_hdl_ratio:2.08, creatinine:1.11, egfr:78.91, uric:3.78,
+  alp:58.1, ggt:22.0, fructosamine:260, tsh:1.34, vitd:56.2,
+  chol:191, chol_hdl_ratio:3.46, hdl:55.1, ldl:112.9, apob:83.0, remnant_chol:22.99,
+  hscrp:0.5, hgb:15.2, hct:44.84, ldl_apob_ratio:1.36
+}};
+
+const RYTHM_LAB_PRELOAD = { date:"2026-08-06", provider:"Rythm Health", values:{
+  chol:168, hdl:50.0, ldl:88, apob:89.5, trig:150, chol_hdl_ratio:3.36,
+  trig_hdl_ratio:3.0, remnant_chol:30,
+  hscrp:0.5, fructosamine:210, uric:5.05, creatinine:0.920, egfr:98.85,
+  albumin:4.70, alp:52.4, ggt:17.8,
+  vitd:39.0, b12:1044, ferritin:329,
+  tsh:0.856, ft3:3.17, e2:23.8
+}};
+
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
 const SITES = ["Abdomen L","Abdomen R","Thigh L","Thigh R","Glute L","Glute R","Arm L","Arm R","Nasal","Oral","Other"];
@@ -742,6 +759,18 @@ function load(){
     d.labs.push({ id:uid(), date:FOUNDER_LAB_PRELOAD.date, provider:FOUNDER_LAB_PRELOAD.provider,
       values:Object.assign({}, FOUNDER_LAB_PRELOAD.values) });
     d.founderLabSeed = true;
+  }
+  // second panel: Rythm 8/6 (separate flag so it adds even if first seed already ran)
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmLabSeed){
+    d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD.date, provider:RYTHM_LAB_PRELOAD.provider,
+      values:Object.assign({}, RYTHM_LAB_PRELOAD.values) });
+    d.rythmLabSeed = true;
+  }
+  // third panel: Rythm 9/6
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmLabSeed2){
+    d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD2.date, provider:RYTHM_LAB_PRELOAD2.provider,
+      values:Object.assign({}, RYTHM_LAB_PRELOAD2.values) });
+    d.rythmLabSeed2 = true;
   }
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
@@ -1244,6 +1273,7 @@ const LAB_MARKERS = [
   {k:"ft3",name:"Free T3",unit:"pg/mL",grp:"Metabolic",lo:2.3,hi:4.2},
   {k:"ft4",name:"Free T4",unit:"ng/dL",grp:"Metabolic",lo:0.8,hi:1.8},
   {k:"rt3",name:"Reverse T3",unit:"ng/dL",grp:"Metabolic",lo:8,hi:25},
+  {k:"fructosamine",name:"Fructosamine",unit:"µmol/L",grp:"Metabolic",lo:170,hi:270},
   // Lipids
   {k:"chol",name:"Total Cholesterol",unit:"mg/dL",grp:"Lipids",lo:0,hi:200},
   {k:"ldl",name:"LDL",unit:"mg/dL",grp:"Lipids",lo:0,hi:100},
@@ -1253,6 +1283,9 @@ const LAB_MARKERS = [
   {k:"chol_hdl_ratio",name:"Chol/HDL Ratio",unit:"",grp:"Lipids",lo:0,hi:5.0},
   {k:"apob",name:"ApoB",unit:"mg/dL",grp:"Lipids",lo:0,hi:90},
   {k:"lpa",name:"Lp(a)",unit:"nmol/L",grp:"Lipids",lo:0,hi:75},
+  {k:"remnant_chol",name:"Remnant Cholesterol",unit:"mg/dL",grp:"Lipids",lo:0,hi:20},
+  {k:"trig_hdl_ratio",name:"Trig/HDL Ratio",unit:"",grp:"Lipids",lo:0,hi:2.0},
+  {k:"ldl_apob_ratio",name:"LDL/ApoB Ratio",unit:"",grp:"Lipids",lo:1.2,hi:1.6},
   // Liver
   {k:"alp",name:"ALP",unit:"U/L",grp:"Liver",lo:35,hi:144},
   {k:"alt",name:"ALT",unit:"U/L",grp:"Liver",lo:9,hi:46},
