@@ -554,12 +554,13 @@ const RYTHM_LAB_PRELOAD2 = { date:"2026-09-06", provider:"Rythm Health", values:
 }};
 
 const RYTHM_LAB_PRELOAD = { date:"2026-08-06", provider:"Rythm Health", values:{
+  shbg:63.7, total_t:610, free_t:81.06, e2:23.8,
   chol:168, hdl:50.0, ldl:88, apob:89.5, trig:150, chol_hdl_ratio:3.36,
   trig_hdl_ratio:3.0, remnant_chol:30,
   hscrp:0.5, fructosamine:210, uric:5.05, creatinine:0.920, egfr:98.85,
   albumin:4.70, alp:52.4, ggt:17.8,
   vitd:39.0, b12:1044, ferritin:329,
-  tsh:0.856, ft3:3.17, e2:23.8
+  tsh:0.856, ft3:3.17, ldl_apob_ratio:0.98
 }};
 
 const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
@@ -761,16 +762,17 @@ function load(){
     d.founderLabSeed = true;
   }
   // second panel: Rythm 8/6 (separate flag so it adds even if first seed already ran)
-  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmLabSeed){
+  const _hasLab=(dt)=> (d.labs||[]).some(L=>L.date===dt);
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmSeedA2 && !_hasLab(RYTHM_LAB_PRELOAD.date)){
     d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD.date, provider:RYTHM_LAB_PRELOAD.provider,
       values:Object.assign({}, RYTHM_LAB_PRELOAD.values) });
-    d.rythmLabSeed = true;
+    d.rythmSeedA2 = true;
   }
   // third panel: Rythm 9/6
-  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmLabSeed2){
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmSeedB2 && !_hasLab(RYTHM_LAB_PRELOAD2.date)){
     d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD2.date, provider:RYTHM_LAB_PRELOAD2.provider,
       values:Object.assign({}, RYTHM_LAB_PRELOAD2.values) });
-    d.rythmLabSeed2 = true;
+    d.rythmSeedB2 = true;
   }
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
