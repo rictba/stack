@@ -563,7 +563,34 @@ const RYTHM_LAB_PRELOAD = { date:"2026-08-06", provider:"Rythm Health", values:{
   tsh:0.856, ft3:3.17, ldl_apob_ratio:0.98
 }};
 
-const COLORS = ["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
+/* Oct 2026 — two panels drawn the SAME MORNING at different labs.
+   Kept separate on purpose: Quest and Rythm disagree substantially (ferritin 174 vs 350,
+   total chol 144 vs 172, LDL 83 vs 108.8). Never merge or cross-compare these series. */
+
+const QUEST_LAB_PRELOAD3 = { date:"2026-10-06", provider:"Quest / Marek Diagnostics", values:{
+  glucose:86, insulin:6.7, homair:1.42, a1c:5.0,
+  bun:24, creatinine:0.99, egfr:91, cystatin_c:0.82, egfr_cys:104,
+  sodium:140, potassium:3.9, chloride:106, co2:25, calcium:9.3,
+  protein_total:6.3, albumin:4.3, globulin:2.0, ag_ratio:2.2,
+  bilirubin:0.6, alp:52, ast:22, alt:30,
+  chol:144, hdl:41, ldl:83, trig:100, nonhdl:103, chol_hdl_ratio:3.5,
+  wbc:6.1, rbc:5.22, hgb:15.8, hct:48.3, mcv:92.5, mch:30.3, mchc:32.7, rdw:12.1,
+  platelets:229, mpv:9.7,
+  neut_abs:3593, lymph_abs:1800, mono_abs:397, eos_abs:281, baso_abs:31,
+  neut_pct:58.9, lymph_pct:29.5, mono_pct:6.5, eos_pct:4.6, baso_pct:0.5,
+  cortisol_am:11.4, ferritin:174, fsh:6.0, lh:5.7, e2:23, igf1:255
+}};
+
+const RYTHM_LAB_PRELOAD3 = { date:"2026-10-07", provider:"Rythm Health", values:{
+  shbg:75.5, total_t:688, free_t:81.29, cortisol_am:9.76, e2:20.1,
+  chol:172, hdl:46.2, ldl:108.82, trig:84.9, apob:81.2,
+  chol_hdl_ratio:3.72, trig_hdl_ratio:1.83, ldl_apob_ratio:1.34, remnant_chol:16.98,
+  hscrp:0.5, fructosamine:223, albumin:4.74, uric:4.24, ferritin:350, vitd:47.4,
+  tsh:0.846, hgb:16.1, hct:47.49,
+  creatinine:1.06, egfr:83.39, alp:55.2, ggt:26.0
+}};
+
+const COLORS =["#7B6FE8","#3DA8D6","#3DD68C","#F2B33D","#F2553D","#D67BD6","#6FD6C7","#E8896F"];
 const SLOT_ORDER = ["AM","Midday","PM"];
 const SITES = ["Abdomen L","Abdomen R","Thigh L","Thigh R","Glute L","Glute R","Arm L","Arm R","Nasal","Oral","Other"];
 
@@ -750,6 +777,7 @@ function load(){
   d.library.forEach(p=>{ if(!p.kind) p.kind="peptide"; });
   // integrity: guarantee unique, non-empty item ids
   d.logs = d.logs || {};
+  d.journal = d.journal || {};
   d.settings = d.settings || {};
   d.labs = Array.isArray(d.labs) ? d.labs : [];
   d.labMarkers = Array.isArray(d.labMarkers) ? d.labMarkers : [];
@@ -773,6 +801,18 @@ function load(){
     d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD2.date, provider:RYTHM_LAB_PRELOAD2.provider,
       values:Object.assign({}, RYTHM_LAB_PRELOAD2.values) });
     d.rythmSeedB2 = true;
+  }
+  // fourth panel: Quest 10/6 (Marek order — fasting draw)
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.questSeedC3 && !_hasLab(QUEST_LAB_PRELOAD3.date)){
+    d.labs.push({ id:uid(), date:QUEST_LAB_PRELOAD3.date, provider:QUEST_LAB_PRELOAD3.provider,
+      values:Object.assign({}, QUEST_LAB_PRELOAD3.values) });
+    d.questSeedC3 = true;
+  }
+  // fifth panel: Rythm 10/7 (same morning draw as the Quest panel above)
+  if(d.profile && FOUNDER_EMAILS.includes((d.profile.email||"").trim().toLowerCase()) && !d.rythmSeedC3 && !_hasLab(RYTHM_LAB_PRELOAD3.date)){
+    d.labs.push({ id:uid(), date:RYTHM_LAB_PRELOAD3.date, provider:RYTHM_LAB_PRELOAD3.provider,
+      values:Object.assign({}, RYTHM_LAB_PRELOAD3.values) });
+    d.rythmSeedC3 = true;
   }
   const seen=new Set();
   (d.items||[]).forEach(it=>{ if(!it.id || seen.has(it.id)) it.id=uid(); seen.add(it.id); });
@@ -1324,6 +1364,8 @@ const LAB_MARKERS = [
   {k:"creatinine",name:"Creatinine",unit:"mg/dL",grp:"Kidney",lo:0.70,hi:1.30},
   {k:"bun",name:"BUN",unit:"mg/dL",grp:"Kidney",lo:7,hi:25},
   {k:"egfr",name:"eGFR",unit:"mL/min",grp:"Kidney",lo:60,hi:200},
+  {k:"cystatin_c",name:"Cystatin C",unit:"mg/L",grp:"Kidney",lo:0.52,hi:1.23},
+  {k:"egfr_cys",name:"eGFR (Cystatin C)",unit:"mL/min",grp:"Kidney",lo:60,hi:200},
   {k:"uric",name:"Uric Acid",unit:"mg/dL",grp:"Kidney",lo:4.0,hi:8.0},
   // Electrolytes & Minerals
   {k:"sodium",name:"Sodium",unit:"mmol/L",grp:"Electrolytes & Minerals",lo:135,hi:146},
